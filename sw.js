@@ -1,5 +1,5 @@
 /* Ammu's Health App — Service Worker */
-var CACHE_NAME = 'ammu-rebuild-v1';
+var CACHE_NAME = 'ammu-rebuild-v2';
 var ASSETS = ['./', './index.html', './app.js', './manifest.json'];
 
 self.addEventListener('install', function(e) {
