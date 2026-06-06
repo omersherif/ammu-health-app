@@ -1,381 +1,145 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-
-  <!-- PWA Meta Tags -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Ammu's App" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#0F6E56" />
-
-  <title>Ammu's Health App</title>
-
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="manifest.json" />
-
-  <!-- Apple Touch Icon (will be replaced with proper icon) -->
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-
-  <!-- Tailwind CSS via CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Tailwind custom config -->
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            green: {
-              50:  '#E1F5EE',
-              100: '#9FE1CB',
-              200: '#5DCAA5',
-              500: '#1D9E75',
-              600: '#0F6E56',
-              800: '#085041',
-            },
-            navy: { 900: '#1A1A3E' },
-            amber: { 600: '#854F0B' },
-          },
-          fontFamily: {
-            nunito: ['Nunito', 'sans-serif'],
-            fredoka: ['"Fredoka One"', 'cursive'],
-          },
-        },
-      },
-    }
-  </script>
-
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet" />
-
-  <style>
-    /* Base resets */
-    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-    html, body { height: 100%; overflow: hidden; font-family: 'Nunito', sans-serif; }
-
-    /* App shell — full viewport, max mobile width centred */
-    #app { height: 100vh; max-width: 480px; margin: 0 auto; position: relative; overflow: hidden; display: flex; flex-direction: column; background: #F8FFFE; }
-
-    /* Screen system — only .active is shown */
-    .screen { position: absolute; inset: 0; display: none; flex-direction: column; }
-    .screen.active { display: flex; }
-
-    /* Page system inside main shell */
-    .page { position: absolute; inset: 0; overflow-y: auto; padding: 14px; display: none; -webkit-overflow-scrolling: touch; }
-    .page.active { display: block; }
-    .page::-webkit-scrollbar { display: none; }
-
-    /* PIN dot animation */
-    .pin-dot { transition: background 0.15s, border-color 0.15s; }
-
-    /* Key press feedback */
-    .key-btn:active { transform: scale(0.93); }
-
-    /* Nav button active states per user */
-    .nav-active-green { border-top-color: #0F6E56 !important; color: #0F6E56 !important; }
-    .nav-active-blue  { border-top-color: #185FA5 !important; color: #185FA5 !important; }
-    .nav-active-navy  { border-top-color: #1A1A3E !important; color: #1A1A3E !important; }
-    .nav-active-amber { border-top-color: #854F0B !important; color: #854F0B !important; }
-    .nav-active-gray  { border-top-color: #5F5E5A !important; color: #5F5E5A !important; }
-
-    /* Smooth screen transitions */
-    .screen { transition: opacity 0.15s; }
-
-    /* Safe area padding for notched phones */
-    #bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0F6E56" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Ammu's App" />
+<title>Ammu's Health App</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" type="image/png" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+  #app { max-width: 480px; margin: 0 auto; height: 100vh; height: 100dvh; position: relative; overflow: hidden; background: #F8FFFE; }
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; }
+  .screen.active { display: flex; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .scrollable { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .nav-active-green { border-top-color: #0F6E56 !important; }
+  .nav-active-blue  { border-top-color: #185FA5 !important; }
+  .nav-active-navy  { border-top-color: #1A1A3E !important; }
+  .nav-active-amber { border-top-color: #854F0B !important; }
+  .nav-active-gray  { border-top-color: #5F5E5A !important; }
+  *::-webkit-scrollbar { display: none; }
+  .fadein { animation: fi 0.3s ease; }
+  @keyframes fi { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 </head>
 <body>
-
 <div id="app">
 
-  <!-- ================================================
-       SCREEN 1: LOGIN
-       ================================================ -->
+  <!-- ════════ SCREEN: LOGIN ════════ -->
   <div class="screen active" id="screen-login">
-    <div class="flex-1 flex flex-col items-center justify-center px-6 py-8 bg-green-50 overflow-y-auto">
-
-      <!-- Logo -->
-      <div class="w-20 h-20 rounded-full bg-green-50 border-2 border-green-100 flex items-center justify-center text-5xl mb-4 shadow-sm">
-        🐘
+    <div class="scrollable" style="flex:1; padding: 32px 24px;">
+      <div style="text-align:center; margin-bottom: 28px;">
+        <div style="font-size: 56px; line-height:1;">🐘</div>
+        <h1 style="font-size: 26px; font-weight: 800; color: #0F6E56; margin: 8px 0 4px;">Ammu's Health App</h1>
+        <p style="font-size: 14px; color: #6B7280; font-weight: 600;">Who's using the app?</p>
       </div>
-
-      <!-- Title -->
-      <h1 class="font-fredoka text-3xl text-green-600 mb-1">Ammu's Health App</h1>
-      <p class="text-sm text-gray-500 font-semibold mb-8">Who's using the app?</p>
-
-      <!-- User list -->
-      <div class="w-full flex flex-col gap-3">
-
-        <!-- Ammu — no PIN -->
-        <button
-          onclick="goPin('ammu')"
-          class="w-full flex items-center gap-4 bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm active:scale-98 transition-transform">
-          <div class="w-11 h-11 rounded-full bg-green-50 flex items-center justify-center text-2xl flex-shrink-0">🦁</div>
-          <div class="flex-1 text-left">
-            <div class="text-sm font-extrabold text-gray-900">Ammu</div>
-            <div class="text-xs font-semibold text-gray-400 mt-0.5">Daily tracker &amp; rewards</div>
-          </div>
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-        </button>
-
-        <!-- Mumma — PIN protected -->
-        <button
-          onclick="goPin('mumma')"
-          class="w-full flex items-center gap-4 bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm active:scale-98 transition-transform">
-          <div class="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center text-2xl flex-shrink-0">👩</div>
-          <div class="flex-1 text-left">
-            <div class="text-sm font-extrabold text-gray-900">Mumma</div>
-            <div class="text-xs font-semibold text-gray-400 mt-0.5">Grocery, meals &amp; daily check</div>
-          </div>
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-        </button>
-
-        <!-- Abbu — PIN protected -->
-        <button
-          onclick="goPin('abbu')"
-          class="w-full flex items-center gap-4 bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm active:scale-98 transition-transform">
-          <div class="w-11 h-11 rounded-full bg-purple-50 flex items-center justify-center text-2xl flex-shrink-0">🦣</div>
-          <div class="flex-1 text-left">
-            <div class="text-sm font-extrabold text-gray-900">Abbu</div>
-            <div class="text-xs font-semibold text-gray-400 mt-0.5">Dashboard &amp; progress</div>
-          </div>
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-        </button>
-
-        <!-- Admin — PIN protected -->
-        <button
-          onclick="goPin('admin')"
-          class="w-full flex items-center gap-4 bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm active:scale-98 transition-transform">
-          <div class="w-11 h-11 rounded-full bg-amber-50 flex items-center justify-center text-2xl flex-shrink-0">⚙️</div>
-          <div class="flex-1 text-left">
-            <div class="text-sm font-extrabold text-gray-900">Admin</div>
-            <div class="text-xs font-semibold text-gray-400 mt-0.5">Full access &amp; settings</div>
-          </div>
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-        </button>
-
-        <!-- Friend — PIN protected -->
-        <button
-          onclick="goPin('family')"
-          class="w-full flex items-center gap-4 bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm active:scale-98 transition-transform">
-          <div class="w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">👀</div>
-          <div class="flex-1 text-left">
-            <div class="text-sm font-extrabold text-gray-900">Family</div>
-            <div class="text-xs font-semibold text-gray-400 mt-0.5">Family view</div>
-          </div>
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-        </button>
-
-      </div>
+      <div id="login-buttons"></div>
     </div>
   </div>
 
-
-  <!-- ================================================
-       SCREEN 2: PIN ENTRY
-       ================================================ -->
+  <!-- ════════ SCREEN: PIN ════════ -->
   <div class="screen" id="screen-pin">
-    <div class="flex-1 flex flex-col items-center justify-center px-6 bg-gray-50 relative">
+    <div class="scrollable" style="flex:1; padding: 32px 24px; display:flex; flex-direction:column; align-items:center;">
+      <div id="pin-avatar" style="width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:40px; margin-bottom:12px; background:#E1F5EE;">🦁</div>
+      <div id="pin-title" style="font-size:20px; font-weight:800; color:#111827;">Ammu's PIN</div>
+      <div style="font-size:12px; color:#9CA3AF; font-weight:600; margin-top:4px;">Enter your 4-digit PIN</div>
 
-      <!-- Back button -->
-      <button
-        onclick="goLogin()""
-        class="absolute top-4 left-4 p-2 rounded-xl text-gray-400 active:bg-gray-200 transition-colors">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-      </button>
-
-      <!-- Avatar -->
-      <div id="pin-avatar" class="w-16 h-16 rounded-full flex items-center justify-center text-4xl mb-3"></div>
-
-      <!-- Title -->
-      <h2 id="pin-title" class="font-fredoka text-2xl text-gray-900 mb-1">Enter PIN</h2>
-      <p class="text-xs font-semibold text-gray-400 mb-6">Enter your 4-digit PIN to continue</p>
-
-      <!-- PIN dots -->
-      <div class="flex gap-4 mb-8">
-        <div id="pd-0" class="pin-dot w-4 h-4 rounded-full border-2 border-gray-300 bg-white"></div>
-        <div id="pd-1" class="pin-dot w-4 h-4 rounded-full border-2 border-gray-300 bg-white"></div>
-        <div id="pd-2" class="pin-dot w-4 h-4 rounded-full border-2 border-gray-300 bg-white"></div>
-        <div id="pd-3" class="pin-dot w-4 h-4 rounded-full border-2 border-gray-300 bg-white"></div>
+      <div style="display:flex; gap:14px; margin:24px 0;">
+        <div class="pin-dot" id="pd-0" style="width:16px; height:16px; border-radius:50%; border:2px solid #D1D5DB; background:#fff;"></div>
+        <div class="pin-dot" id="pd-1" style="width:16px; height:16px; border-radius:50%; border:2px solid #D1D5DB; background:#fff;"></div>
+        <div class="pin-dot" id="pd-2" style="width:16px; height:16px; border-radius:50%; border:2px solid #D1D5DB; background:#fff;"></div>
+        <div class="pin-dot" id="pd-3" style="width:16px; height:16px; border-radius:50%; border:2px solid #D1D5DB; background:#fff;"></div>
       </div>
 
-      <!-- Keypad -->
-      <div class="grid grid-cols-3 gap-3 w-full max-w-xs">
-        <button onclick="pk('1')" class="key-btn aspect-square rounded-2xl border border-gray-200 bg-white font-fredoka text-2xl text-gray-900 flex items-center justify-center shadow-sm transition-transform">1</button>
-        <button onclick="pk('2')" class="key-btn aspect-square rounded-2xl border border-gray-200 bg-white font-fredoka text-2xl text-gray-900 flex items-center justify-center shadow-sm transition-transform">2</button>
-        <button onclick="pk('3')" class="key-btn aspect-square rounded-2xl border border-gray-200 bg-white font-fredoka text-2xl text-gray-900 flex items-center justify-center shadow-sm transition-transform">3</button>
-        <button onclick="pk('4')" class="key-btn aspect-square rounded-2xl border border-gray-200 bg-white font-fredoka text-2xl text-gray-900 flex items-center justify-center shadow-sm transition-transform">4</button>
-        <button onclick="pk('5')" class="key-btn aspect-square rounded-2xl border border-gray-200 bg-white font-fredoka text-2xl text-gray-900 flex items-center justify-center shadow-sm transition-transform">5</button>
-        <button onclick="pk('6')" class="key-btn aspect-square rounded-2xl border border-gray-200 bg-white font-fredoka text-2xl text-gray-900 flex items-center justify-center shadow-sm transition-transform">6</button>
-        <button onclick="pk('7')" class="key-btn aspect-square rounded-2xl border border-gray-200 bg-white font-fredoka text-2xl text-gray-900 flex items-center justify-center shadow-sm transition-transform">7</button>
-        <button onclick="pk('8')" class="key-btn aspect-square rounded-2xl border border-gray-200 bg-white font-fredoka text-2xl text-gray-900 flex items-center justify-center shadow-sm transition-transform">8</button>
-        <button onclick="pk('9')" class="key-btn aspect-square rounded-2xl border border-gray-200 bg-white font-fredoka text-2xl text-gray-900 flex items-center justify-center shadow-sm transition-transform">9</button>
+      <div id="pin-error" style="color:#DC2626; font-size:13px; font-weight:700; min-height:20px; opacity:0; transition:opacity 0.2s;">Wrong PIN — try again</div>
+
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; max-width:280px; width:100%; margin-top:12px;">
+        <button onclick="pk('1')" class="pin-key">1</button>
+        <button onclick="pk('2')" class="pin-key">2</button>
+        <button onclick="pk('3')" class="pin-key">3</button>
+        <button onclick="pk('4')" class="pin-key">4</button>
+        <button onclick="pk('5')" class="pin-key">5</button>
+        <button onclick="pk('6')" class="pin-key">6</button>
+        <button onclick="pk('7')" class="pin-key">7</button>
+        <button onclick="pk('8')" class="pin-key">8</button>
+        <button onclick="pk('9')" class="pin-key">9</button>
         <div></div>
-        <button onclick="pk('0')" class="key-btn aspect-square rounded-2xl border border-gray-200 bg-white font-fredoka text-2xl text-gray-900 flex items-center justify-center shadow-sm transition-transform">0</button>
-        <button onclick="pdel()"" class="key-btn aspect-square rounded-2xl border border-gray-200 bg-white text-xl text-gray-400 flex items-center justify-center shadow-sm transition-transform">⌫</button>
+        <button onclick="pk('0')" class="pin-key">0</button>
+        <button onclick="pdel()" class="pin-key" style="font-size:20px;">⌫</button>
       </div>
 
-      <!-- Error message -->
-      <p id="pin-error" class="mt-4 text-xs font-extrabold text-red-500 opacity-0 transition-opacity">Wrong PIN — try again</p>
-
+      <button onclick="goLogin()" style="margin-top:20px; background:none; border:none; color:#9CA3AF; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit;">← Back to users</button>
     </div>
   </div>
 
-
-  <!-- ================================================
-       SCREEN 3: MAIN APP SHELL
-       Used by all users after login.
-       Header + clocks + pages + bottom nav
-       ================================================ -->
+  <!-- ════════ SCREEN: MAIN ════════ -->
   <div class="screen" id="screen-main">
-
-    <!-- Top header — colour changes per user -->
-    <div id="main-header" class="flex-shrink-0 px-4 pt-3 pb-2 flex items-center justify-between">
+    <!-- Header -->
+    <div id="main-header" style="flex-shrink:0; padding:12px 16px 8px; display:flex; align-items:center; justify-content:space-between; background:#0F6E56;">
       <div>
-        <p id="main-greeting" class="text-xs font-bold text-white/70 tracking-wide"></p>
-        <h1 id="main-name" class="font-fredoka text-xl text-white leading-tight"></h1>
+        <div id="main-greeting" style="font-size:11px; color:rgba(255,255,255,0.75); font-weight:700;">Good morning,</div>
+        <div id="main-name" style="font-size:19px; color:#fff; font-weight:800;">Ammu</div>
       </div>
-      <div class="flex items-center gap-2">
-        <span id="main-mascot" class="text-3xl"></span>
-        <button
-          onclick="goLogin()""
-          class="text-xs font-extrabold text-white/80 bg-white/15 border border-white/30 rounded-full px-3 py-1.5">
-          Switch
-        </button>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span id="main-mascot" style="font-size:26px;">🦁</span>
+        <button onclick="goLogin()" style="background:rgba(255,255,255,0.2); border:none; color:#fff; font-size:12px; font-weight:700; padding:6px 12px; border-radius:8px; cursor:pointer; font-family:inherit;">Switch</button>
       </div>
     </div>
 
-    <!-- Three city clocks — always visible after login -->
-    <div id="clocks-bar" style="flex-shrink:0;display:flex;align-items:center;padding:6px 16px;background:#1A1A2E;">
-      <div style="flex:1;text-align:center;">
-        <div style="font-size:13px;line-height:1;">🇬🇧</div>
-        <div style="font-size:9px;font-weight:800;color:#9FE1CB;text-transform:uppercase;letter-spacing:0.5px;margin-top:1px;">London</div>
-        <div id="ck-lon" style="font-family:monospace;font-size:14px;font-weight:900;color:#FFFFFF;letter-spacing:1px;"></div>
-        <div id="ck-lon-ap" style="font-size:9px;font-weight:700;color:#9FE1CB;"></div>
+    <!-- Clocks -->
+    <div id="clocks-bar" style="flex-shrink:0; display:flex; align-items:center; padding:6px 16px; background:#1A1A2E;">
+      <div style="flex:1; text-align:center;">
+        <div style="font-size:13px; line-height:1;">🇬🇧</div>
+        <div style="font-size:9px; font-weight:800; color:#9FE1CB; text-transform:uppercase; letter-spacing:0.5px; margin-top:1px;">London</div>
+        <div id="ck-lon" style="font-family:monospace; font-size:14px; font-weight:900; color:#fff; line-height:1.2;">--:--</div>
+        <div id="ck-lon-ap" style="font-size:9px; font-weight:700; color:#9FE1CB;"></div>
       </div>
-      <div style="width:1px;background:#3A3A5E;height:32px;margin:0 8px;"></div>
-      <div style="flex:1;text-align:center;">
-        <div style="font-size:13px;line-height:1;">🇦🇪</div>
-        <div style="font-size:9px;font-weight:800;color:#FAC775;text-transform:uppercase;letter-spacing:0.5px;margin-top:1px;">Dubai</div>
-        <div id="ck-dub" style="font-family:monospace;font-size:14px;font-weight:900;color:#FFFFFF;letter-spacing:1px;"></div>
-        <div id="ck-dub-ap" style="font-size:9px;font-weight:700;color:#FAC775;"></div>
+      <div style="width:1px; background:#3A3A5E; height:32px; margin:0 8px;"></div>
+      <div style="flex:1; text-align:center;">
+        <div style="font-size:13px; line-height:1;">🇦🇪</div>
+        <div style="font-size:9px; font-weight:800; color:#FAC775; text-transform:uppercase; letter-spacing:0.5px; margin-top:1px;">Dubai</div>
+        <div id="ck-dub" style="font-family:monospace; font-size:14px; font-weight:900; color:#fff; line-height:1.2;">--:--</div>
+        <div id="ck-dub-ap" style="font-size:9px; font-weight:700; color:#FAC775;"></div>
       </div>
-      <div style="width:1px;background:#3A3A5E;height:32px;margin:0 8px;"></div>
-      <div style="flex:1;text-align:center;">
-        <div style="font-size:13px;line-height:1;">🇮🇳</div>
-        <div style="font-size:9px;font-weight:800;color:#ED93B1;text-transform:uppercase;letter-spacing:0.5px;margin-top:1px;">Palakkad</div>
-        <div id="ck-pal" style="font-family:monospace;font-size:14px;font-weight:900;color:#FFFFFF;letter-spacing:1px;"></div>
-        <div id="ck-pal-ap" style="font-size:9px;font-weight:700;color:#ED93B1;"></div>
+      <div style="width:1px; background:#3A3A5E; height:32px; margin:0 8px;"></div>
+      <div style="flex:1; text-align:center;">
+        <div style="font-size:13px; line-height:1;">🇮🇳</div>
+        <div style="font-size:9px; font-weight:800; color:#ED93B1; text-transform:uppercase; letter-spacing:0.5px; margin-top:1px;">Palakkad</div>
+        <div id="ck-pal" style="font-family:monospace; font-size:14px; font-weight:900; color:#fff; line-height:1.2;">--:--</div>
+        <div id="ck-pal-ap" style="font-size:9px; font-weight:700; color:#ED93B1;"></div>
       </div>
     </div>
 
-    <!-- Page content area -->
-    <div id="pages-container" class="flex-1 overflow-hidden relative bg-gray-50"></div>
+    <!-- Page content -->
+    <div id="pages-container" class="scrollable" style="flex:1; background:#F8FFFE;"></div>
 
-    <!-- Bottom navigation -->
-    <div id="bottom-nav" class="flex-shrink-0 flex bg-white border-t border-gray-200"></div>
-
+    <!-- Bottom nav -->
+    <div id="bottom-nav" style="flex-shrink:0; display:flex; background:#fff; border-top:1px solid #E5E7EB;"></div>
   </div>
 
 </div>
 
-<!-- Load app logic from separate file -->
-
-<script>
-// Critical login functions — inline to guarantee immediate availability
-// These are duplicated from app.js as a safety net
-
-var PINS_INLINE = { ammu:'2015', mumma:'2468', abbu:'2311', admin:'2006', family:'1234' };
-var _pendingUser = '';
-var _pinBuf = '';
-
-function goPin(userKey) {
-  _pendingUser = userKey;
-  _pinBuf = '';
-  var names = { ammu:'Ammu', mumma:'Mumma', abbu:'Abbu', admin:'Admin', family:'Family' };
-  var avs   = { ammu:'🦁', mumma:'👩', abbu:'🦣', admin:'⚙️', family:'👨‍👩‍👧' };
-  var bgs   = { ammu:'#E1F5EE', mumma:'#E6F1FB', abbu:'#EEEDFE', admin:'#FAEEDA', family:'#F1EFE8' };
-  var av = document.getElementById('pin-avatar');
-  if (av) { av.textContent = avs[userKey]; av.className = 'w-16 h-16 rounded-full flex items-center justify-center text-4xl mb-3'; av.style.background = bgs[userKey]; }
-  var pt = document.getElementById('pin-title');
-  if (pt) pt.textContent = (names[userKey] || userKey) + "'s PIN";
-  var pe = document.getElementById('pin-error');
-  if (pe) pe.style.opacity = '0';
-  _updateDots();
-  _showScreen('screen-pin');
-}
-
-function goLogin() {
-  if (window._clockTimer) { clearInterval(window._clockTimer); window._clockTimer = null; }
-  _pinBuf = '';
-  _updateDots();
-  _showScreen('screen-login');
-}
-
-function pk(digit) {
-  if (_pinBuf.length >= 4) return;
-  _pinBuf += digit;
-  _updateDots();
-  if (_pinBuf.length === 4) setTimeout(_checkPin, 200);
-}
-
-function pdel() {
-  _pinBuf = _pinBuf.slice(0, -1);
-  _updateDots();
-  var pe = document.getElementById('pin-error');
-  if (pe) pe.style.opacity = '0';
-}
-
-function _updateDots() {
-  for (var i = 0; i < 4; i++) {
-    var dot = document.getElementById('pd-' + i);
-    if (!dot) continue;
-    if (i < _pinBuf.length) { dot.classList.add('bg-green-600','border-green-600'); dot.classList.remove('bg-white','border-gray-300'); }
-    else { dot.classList.remove('bg-green-600','border-green-600'); dot.classList.add('bg-white','border-gray-300'); }
-  }
-}
-
-function _checkPin() {
-  if (_pinBuf === PINS_INLINE[_pendingUser]) {
-    // Sync with app.js State if available
-    if (window.App && window.App._checkPin) {
-      window.App.State = window.App.State || {};
-      window.App.State.pendingUser = _pendingUser;
-      window.App.State.pinBuffer = _pinBuf;
-    }
-    if (typeof loadUser === 'function') { loadUser(_pendingUser); }
-    else { _showScreen('screen-main'); }
-  } else {
-    var pe = document.getElementById('pin-error');
-    if (pe) pe.style.opacity = '1';
-    _pinBuf = '';
-    _updateDots();
-  }
-}
-
-function _showScreen(id) {
-  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
-  var el = document.getElementById(id);
-  if (el) el.classList.add('active');
-}
-</script>
+<style>
+  .pin-key { padding:16px; border-radius:14px; border:1px solid #E5E7EB; background:#fff; font-size:22px; font-weight:700; cursor:pointer; font-family:inherit; color:#111827; }
+  .pin-key:active { background:#F3F4F6; transform:scale(0.96); }
+</style>
 
 <script src="app.js"></script>
-
-<!-- Register service worker -->
 <script>
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('SW registered:', reg.scope))
-        .catch(err => console.log('SW registration failed:', err));
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('sw.js').catch(function(){});
     });
   }
 </script>
-
 </body>
 </html>
