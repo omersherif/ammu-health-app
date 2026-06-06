@@ -43,6 +43,7 @@
         <p style="font-size: 14px; color: #6B7280; font-weight: 600;">Who's using the app?</p>
       </div>
       <div id="login-buttons"></div>
+      <div id="version-label" style="text-align:center; font-size:9px; color:#D1D5DB; font-weight:600; margin-top:20px;">v10</div>
     </div>
   </div>
 
@@ -137,10 +138,21 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('sw.js').then(function(reg) {
-        // Check for updates every time the app opens
+      // updateViaCache:'none' stops the browser caching sw.js itself — critical for auto-updates
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function(reg) {
         reg.update();
-        // When a new service worker takes over, reload once to get fresh content
+        // Poll for updates periodically while app is open
+        setInterval(function() { reg.update(); }, 60000);
+        // When a waiting worker appears, tell it to activate immediately
+        reg.addEventListener('updatefound', function() {
+          var newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', function() {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // New version ready — it will take over and trigger controllerchange
+            }
+          });
+        });
         var refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', function() {
           if (refreshing) return;

@@ -11,6 +11,8 @@
 
 'use strict';
 
+var APP_VERSION = 'v10';  // bump on each release
+
 /* ─── CONFIG ─────────────────────────────────────────────────────────────── */
 
 var GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
@@ -404,7 +406,7 @@ window.addEventListener('load', function() {
 
   buildLoginButtons();
   showScreen('screen-login');
-  console.log('[Ammu App] All modules loaded');
+  console.log('[Ammu App] Loaded ' + APP_VERSION);
 });
 
 

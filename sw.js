@@ -2,7 +2,7 @@
    NETWORK-FIRST strategy: always tries fresh files first, falls back to
    cache only when offline. Users NEVER need to clear cache manually. */
 
-var CACHE_NAME = 'ammu-app-v9';
+var CACHE_NAME = 'ammu-app-v10';
 var ASSETS = ['./', './index.html', './app.js', './manifest.json'];
 
 // Install — cache assets, activate immediately
