@@ -564,6 +564,9 @@ function ammuGoTracker() {
 /* ─── AMMU TRACKER ───────────────────────────────────────────────────────── */
 
 function buildAmmuTracker() {
+  // Reset per-session tracker state so returning to the page allows saving again
+  AmmuState.daySubmitted = false;
+  AmmuState.ticked = 0;
   var day = getDayName();
   var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
@@ -1419,24 +1422,87 @@ function mummaShowLists() {
     alert('No shops assigned yet! Select items and tap a shop name to assign them.');
     return;
   }
-  var html = '<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shopping Lists</title></head><body style="font-family:sans-serif; padding:16px; margin:0;">';
-  html += '<div style="font-size:20px; font-weight:900; margin-bottom:16px;">🛒 My Shopping Lists</div>';
+
+  // Build plain-text list (for copy + WhatsApp)
+  var textList = '🛒 Ammu Grocery List\n\n';
   for (var shopName in byShop) {
-    html += '<div style="margin-bottom:16px;"><div style="font-size:14px; font-weight:800; color:#185FA5; margin-bottom:8px;">' + shopName + ' (' + byShop[shopName].length + ')</div>';
+    textList += '*' + shopName + '*\n';
     for (var j = 0; j < byShop[shopName].length; j++) {
       var p = byShop[shopName][j];
-      html += '<div style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #eee;"><span style="width:18px; height:18px; border-radius:4px; border:2px solid #ccc; display:inline-block;"></span><span style="font-size:14px;">' + p.e + ' ' + p.name + '</span><span style="font-size:12px; color:#999; margin-left:auto;">' + p.qty + '</span></div>';
+      textList += '• ' + p.name + ' (' + p.qty + ')\n';
     }
-    html += '</div>';
+    textList += '\n';
   }
-  html += '<div style="font-size:12px; color:#999; margin-top:8px;">Screenshot this to take to the shop 📸</div></body></html>';
-  var w = window.open('', '_blank');
-  if (w) { w.document.write(html); w.document.close(); }
-  else alert('Please allow popups to see your store lists.');
+  window._groceryText = textList;
+
+  // Build the in-app modal
+  var modalHtml = '<div id="grocery-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; display:flex; align-items:flex-end; justify-content:center;" onclick="mummaCloseLists(event)">'
+    + '<div onclick="event.stopPropagation()" style="background:#fff; width:100%; max-width:480px; max-height:85vh; border-radius:20px 20px 0 0; display:flex; flex-direction:column;">'
+    + '<div style="padding:16px; border-bottom:1px solid #F3F4F6; display:flex; align-items:center; gap:8px;">'
+    + '<span style="font-size:20px;">🛒</span><span style="flex:1; font-size:16px; font-weight:800; color:#1F2937;">My Shopping Lists</span>'
+    + '<button onclick="mummaCloseLists()" style="background:#F3F4F6; border:none; border-radius:8px; width:32px; height:32px; font-size:18px; cursor:pointer; color:#6B7280;">×</button>'
+    + '</div>'
+    + '<div style="flex:1; overflow-y:auto; padding:16px;">';
+
+  for (var sName in byShop) {
+    var st = SHOP_STYLE[sName] || SHOP_STYLE.Other;
+    modalHtml += '<div style="margin-bottom:16px;">'
+      + '<div style="font-size:13px; font-weight:800; color:' + st.color + '; background:' + st.bg + '; padding:6px 12px; border-radius:10px; display:inline-block; margin-bottom:8px;">' + sName + ' (' + byShop[sName].length + ')</div>';
+    for (var k = 0; k < byShop[sName].length; k++) {
+      var item = byShop[sName][k];
+      modalHtml += '<div style="display:flex; align-items:center; gap:8px; padding:6px 4px; border-bottom:1px solid #F9FAFB;"><span style="font-size:16px;">' + item.e + '</span><span style="flex:1; font-size:13px; font-weight:600; color:#374151;">' + item.name + '</span><span style="font-size:11px; color:#9CA3AF;">' + item.qty + '</span></div>';
+    }
+    modalHtml += '</div>';
+  }
+
+  modalHtml += '</div>'
+    + '<div style="padding:12px 16px; border-top:1px solid #F3F4F6; display:flex; gap:8px;">'
+    + '<button onclick="mummaCopyList()" style="flex:1; padding:12px; border-radius:12px; background:#F3F4F6; color:#1F2937; font-size:14px; font-weight:800; border:none; cursor:pointer; font-family:inherit;">📋 Copy list</button>'
+    + '<button onclick="mummaWhatsAppList()" style="flex:1; padding:12px; border-radius:12px; background:#25D366; color:#fff; font-size:14px; font-weight:800; border:none; cursor:pointer; font-family:inherit;">💬 WhatsApp</button>'
+    + '</div>'
+    + '</div></div>';
+
+  var wrap = document.createElement('div');
+  wrap.innerHTML = modalHtml;
+  document.body.appendChild(wrap.firstChild);
 }
 
+function mummaCloseLists(e) {
+  if (e && e.target && e.target.id !== 'grocery-modal') return;
+  var modal = document.getElementById('grocery-modal');
+  if (modal && modal.parentNode) modal.parentNode.removeChild(modal);
+}
 
-/* ─── MUMMA MEALS ────────────────────────────────────────────────────────── */
+function mummaCopyList() {
+  var text = window._groceryText || '';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      alert('Copied! Paste it anywhere you like 📋');
+    }).catch(function() {
+      mummaCopyFallback(text);
+    });
+  } else {
+    mummaCopyFallback(text);
+  }
+}
+
+function mummaCopyFallback(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); alert('Copied! Paste it anywhere 📋'); }
+  catch (e) { alert('Could not copy automatically. Long-press to select the list.'); }
+  document.body.removeChild(ta);
+}
+
+function mummaWhatsAppList() {
+  var text = window._groceryText || '';
+  var url = 'https://wa.me/?text=' + encodeURIComponent(text);
+  window.open(url, '_blank');
+}
 
 function buildMummaMeals() {
   var days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
