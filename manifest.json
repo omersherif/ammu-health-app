@@ -1,0 +1,26 @@
+{
+  "name": "Ammu's Health App",
+  "short_name": "Ammu's App",
+  "description": "Ammu's personal health tracker",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F6E56",
+  "theme_color": "#0F6E56",
+  "lang": "en",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "img/elephant-small.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "img/elephant-large.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
