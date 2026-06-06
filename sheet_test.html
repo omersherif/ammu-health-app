@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Sheet Connection Test</title>
+<style>body{font-family:sans-serif;padding:20px;max-width:500px;margin:0 auto;}button{width:100%;padding:14px;font-size:16px;font-weight:bold;border-radius:10px;border:none;background:#0F6E56;color:#fff;margin:8px 0;cursor:pointer;}input{width:100%;padding:12px;font-size:14px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;margin:8px 0;}#log{background:#f5f5f5;padding:12px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;margin-top:12px;min-height:100px;}</style>
+</head>
+<body>
+<h2>🐘 Google Sheet Connection Test</h2>
+<p>This tests ONLY the sheet connection. Paste your Apps Script URL and tap the buttons.</p>
+<input type="text" id="url" placeholder="Paste your /exec URL here" />
+<button onclick="test1()">Test 1: Send with text/plain</button>
+<button onclick="test2()">Test 2: Send with no-cors mode</button>
+<div id="log">Results will appear here...</div>
+
+<script>
+function log(msg) {
+  document.getElementById('log').textContent += '\n' + msg;
+}
+function getUrl() {
+  var u = document.getElementById('url').value.trim();
+  if (!u) { log('❌ Please paste your URL first!'); return null; }
+  return u;
+}
+
+function test1() {
+  var url = getUrl();
+  if (!url) return;
+  log('\n--- TEST 1: text/plain ---');
+  log('Sending...');
+  var data = { type:'daily_tracker', date:new Date().toISOString().split('T')[0], ticked:99, mood:'TEST1', coins:999, streak:1, timestamp:new Date().toISOString() };
+  fetch(url, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(data) })
+    .then(function(r){ log('✅ Response received: ' + r.status); return r.text(); })
+    .then(function(t){ log('Response body: ' + t.substring(0,150)); log('>> CHECK YOUR SHEET for ticked=99, mood=TEST1'); })
+    .catch(function(e){ log('❌ Error: ' + e.message); });
+}
+
+function test2() {
+  var url = getUrl();
+  if (!url) return;
+  log('\n--- TEST 2: no-cors mode ---');
+  log('Sending...');
+  var data = { type:'daily_tracker', date:new Date().toISOString().split('T')[0], ticked:88, mood:'TEST2', coins:888, streak:2, timestamp:new Date().toISOString() };
+  fetch(url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(data) })
+    .then(function(){ log('✅ Request sent (no-cors gives no response body)'); log('>> CHECK YOUR SHEET for ticked=88, mood=TEST2'); })
+    .catch(function(e){ log('❌ Error: ' + e.message); });
+}
+</script>
+</body>
+</html>
