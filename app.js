@@ -111,6 +111,7 @@ function goLogin() {
   if (State.clockTimer) { clearInterval(State.clockTimer); State.clockTimer = null; }
   State.activeUser = null;
   State.pinBuffer = '';
+  dismissTestBanner();
   updatePinDots();
   showScreen('screen-login');
 }
@@ -276,6 +277,12 @@ function loadUser(userKey) {
   // Reset scroll to top
   var pc = document.getElementById('pages-container');
   if (pc) pc.scrollTop = 0;
+
+  // Sync any pending offline data
+  syncPending();
+
+  // Show test mode banner if active
+  if (APP_TEST_MODE) setTimeout(showTestBanner, 400);
 }
 
 function getGreeting() {
@@ -295,6 +302,96 @@ function renderUserPage(userKey, pageId) {
   if (userKey === 'admin'  && typeof renderAdminPage  === 'function') return renderAdminPage(pageId);
   if (userKey === 'family' && typeof renderFamilyPage === 'function') return renderFamilyPage(pageId);
   return null;
+}
+
+
+/* ============================================================================
+   MODULE 6: DATA LAYER + TEST MODE BANNER
+   - submitData: sends data to Google Sheets, queues offline submissions
+   - Test mode banner shown after login
+   ============================================================================ */
+
+/* ─── DATA SUBMISSION ────────────────────────────────────────────────────── */
+
+function submitData(data) {
+  // Add timestamp + date if missing
+  if (!data.date) data.date = new Date().toISOString().split('T')[0];
+  if (!data.timestamp) data.timestamp = new Date().toISOString();
+
+  // If no URL set, just queue it
+  if (GOOGLE_SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+    queueSubmission(data);
+    return;
+  }
+
+  fetch(GOOGLE_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).then(function(r) {
+    return r.json();
+  }).then(function(res) {
+    console.log('[Data] Saved:', data.type, res);
+  }).catch(function(err) {
+    console.log('[Data] Offline — queuing:', data.type);
+    queueSubmission(data);
+  });
+}
+
+function queueSubmission(data) {
+  var queue = JSON.parse(localStorage.getItem('pending_submissions') || '[]');
+  queue.push(data);
+  localStorage.setItem('pending_submissions', JSON.stringify(queue));
+}
+
+function syncPending() {
+  if (GOOGLE_SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') return;
+  var queue = JSON.parse(localStorage.getItem('pending_submissions') || '[]');
+  if (queue.length === 0) return;
+
+  var remaining = [];
+  var done = 0;
+  function tryNext(i) {
+    if (i >= queue.length) {
+      localStorage.setItem('pending_submissions', JSON.stringify(remaining));
+      if (done > 0) console.log('[Data] Synced ' + done + ' pending submissions');
+      return;
+    }
+    fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(queue[i])
+    }).then(function(r) { return r.json(); })
+      .then(function() { done++; tryNext(i + 1); })
+      .catch(function() { remaining.push(queue[i]); tryNext(i + 1); });
+  }
+  tryNext(0);
+}
+
+/* ─── TEST MODE BANNER ───────────────────────────────────────────────────── */
+
+function showTestBanner() {
+  if (!APP_TEST_MODE) return;
+  if (document.getElementById('test-banner')) return;
+
+  var banner = document.createElement('div');
+  banner.id = 'test-banner';
+  banner.style.cssText = 'position:fixed; bottom:70px; left:50%; transform:translateX(-50%); width:calc(100% - 28px); max-width:452px; background:#1A1A3E; border-radius:14px; padding:14px 16px; z-index:9999; box-shadow:0 4px 24px rgba(0,0,0,0.3); display:flex; align-items:flex-start; gap:12px;';
+  banner.innerHTML = '<div style="font-size:24px; flex-shrink:0;">🧪</div>'
+    + '<div style="flex:1;"><div style="font-size:14px; font-weight:800; color:#fff; margin-bottom:3px;">Test mode — play around!</div>'
+    + '<div style="font-size:11px; font-weight:600; color:#A5B4FC; line-height:1.5;">The data you see is sample data from last week. Explore everything — nothing is real yet!</div></div>'
+    + '<button onclick="dismissTestBanner()" style="background:rgba(255,255,255,0.15); border:none; border-radius:8px; padding:5px 11px; color:#fff; font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0; font-family:inherit;">Got it</button>';
+  document.body.appendChild(banner);
+}
+
+function dismissTestBanner() {
+  var b = document.getElementById('test-banner');
+  if (b) {
+    b.style.transition = 'opacity 0.3s, transform 0.3s';
+    b.style.opacity = '0';
+    b.style.transform = 'translateX(-50%) translateY(20px)';
+    setTimeout(function() { if (b.parentNode) b.parentNode.removeChild(b); }, 300);
+  }
 }
 
 /* ─── INIT ───────────────────────────────────────────────────────────────── */
