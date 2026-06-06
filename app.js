@@ -1453,3 +1453,448 @@ function renderMummaPage(pageId) {
   if (pageId === 'progress') return buildMummaProgress();
   return null;
 }
+
+
+/* ============================================================================
+   MODULE 4: ABBU'S SECTION
+   Pages: Today, Weekly, Report, Goals, Alerts, Progress
+   Abbu monitors from Palakkad, India.
+   ============================================================================ */
+
+/* ─── ABBU DATA ──────────────────────────────────────────────────────────── */
+
+var ABBU_REPORT_TEMPLATES = [
+  {
+    stats: (d) => [
+      { e:'🏆', t:'Best day of the month',       v: d.bestDay },
+      { e:'🔥', t:'Longest streak this month',   v: d.streak + ' days!' },
+      { e:'💪', t:'Total exercises completed',   v: d.exercises + ' sessions' },
+      { e:'🥚', t:'Eggs eaten this month',        v: d.eggs + ' eggs!' },
+      { e:'🐘', t:'Animal of the month',          v: d.animal },
+      { e:'⭐', t:'Perfect days this month',     v: d.perfectDays + ' perfect days' },
+    ],
+    note: (d) => `Ammu, this month you showed everyone what you are made of! Your exercise scores are incredible — you are officially getting stronger every single day. The ${d.weakest} section needs a little more love next month — but I know you can do it. I am so proud of every single tick you made this month. From Palakkad with all my love. 💙`
+  },
+  {
+    stats: (d) => [
+      { e:'🌟', t:'Most improved area',           v: d.mostImproved },
+      { e:'🔥', t:'Total days tracked',           v: d.daysTracked + ' out of 30' },
+      { e:'🪙', t:'Total coins earned',           v: '🪙 ' + d.coins + ' coins!' },
+      { e:'💧', t:'Glasses of water drunk',       v: d.water + ' glasses total' },
+      { e:'🦁', t:'Spirit animal this month',     v: d.animal },
+      { e:'📚', t:'Reading & drawing sessions',   v: d.reading + ' sessions' },
+    ],
+    note: (d) => `My dearest Ammu! What a month this has been. You tracked ${d.daysTracked} days — that takes real discipline. Your ${d.strongest} scores make Abbu so happy from here in Palakkad. Next month let's focus on ${d.weakest} together. Remember, every day you fill in that tracker, Abbu sees it and smiles. 🦣💙`
+  },
+  {
+    stats: (d) => [
+      { e:'💪', t:'Strongest category this month', v: d.strongest },
+      { e:'📈', t:'Improvement vs last month',     v: '+' + d.improvement + '% better!' },
+      { e:'🧘', t:'Meditation sessions',           v: d.meditation + ' sessions' },
+      { e:'🥗', t:'Healthy meals tracked',         v: d.meals + ' meals logged' },
+      { e:'🏊', t:'Swimming sessions',             v: d.swimming + ' Sunday swims' },
+      { e:'🌺', t:'Kerala elephant power rating',  v: d.elephantRating + '/10 🐘' },
+    ],
+    note: (d) => `Ammu, you know what Abbu thinks when he sees your tracker every day? He thinks — that is MY daughter. Strong, disciplined, and full of heart. This month your ${d.strongest} score was outstanding. You are already better than Abbu was at age 10! Month ${d.monthNum} is going to be even bigger. Never stop, my little champion. 🦣`
+  },
+];
+
+var ABBU_REPORT_DATA = {
+  bestDay:'Wednesday', streak:12, exercises:24, eggs:26, animal:'🐘 Elephant',
+  perfectDays:8, mostImproved:'Muscle Power 💪', daysTracked:27, coins:247,
+  water:142, reading:18, weakest:'Gut Health 🌱', strongest:'Exercise ⚡'
+};
+
+var abbuGoals = JSON.parse(localStorage.getItem('abbu_goals') || 'null') || [
+  { id:1, who:'Ammu',  text:'Do 10 push-ups in a row by end of month', status:'agreed' },
+  { id:2, who:'Abbu',  text:'Eat egg every single day this month',     status:'proposed' },
+  { id:3, who:'Mumma', text:'Try one new green vegetable each week',    status:'agreed' }
+];
+
+var abbuRewards = JSON.parse(localStorage.getItem('abbu_rewards') || 'null') || [
+  { id:1, item:'🎬 Movie night request', from:'Ammu', detail:'Wants to watch a slightly grown-up movie', status:'pending' },
+  { id:2, item:'🍕 Cheat day', from:'Ammu', detail:'Completed 10 days streak!', status:'pending' }
+];
+
+function abbuSaveGoals()  { localStorage.setItem('abbu_goals',   JSON.stringify(abbuGoals)); }
+function abbuSaveRewards() { localStorage.setItem('abbu_rewards', JSON.stringify(abbuRewards)); }
+
+/* ─── ABBU TODAY ─────────────────────────────────────────────────────────── */
+
+function buildAbbuToday() {
+  var h = '<div class="fadein" style="padding:14px;">';
+
+  // Traffic lights
+  var lights = [['App opened today','green'],['Morning checklist','green'],['Exercise done','green'],['Evening checklist','amber'],['Mumma confirmed','red']];
+  var lightColor = { green:['#ECFDF5','#10B981','✅'], amber:['#FFFBEB','#F59E0B','⏳'], red:['#FEF2F2','#EF4444','⌛'] };
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; overflow:hidden; margin-bottom:12px;">'
+    +    '<div style="padding:10px 16px; border-bottom:1px solid #F9FAFB; font-size:13px; font-weight:800; color:#1F2937;">📊 Today at a glance</div>';
+  for (var i = 0; i < lights.length; i++) {
+    var lc = lightColor[lights[i][1]];
+    h += '<div style="display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid #F9FAFB;"><span style="font-size:18px;">' + lc[2] + '</span><span style="flex:1; font-size:13px; font-weight:600; color:#374151;">' + lights[i][0] + '</span><span style="width:12px; height:12px; border-radius:50%; background:' + lc[1] + ';"></span></div>';
+  }
+  h += '</div>';
+
+  // Quick stats
+  h += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">'
+    +    '<div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:16px; padding:14px; text-align:center;"><div style="font-size:28px; font-weight:900; color:#F59E0B;">247</div><div style="font-size:11px; font-weight:700; color:#B45309;">🪙 coins</div></div>'
+    +    '<div style="background:#FFF7ED; border:1px solid #FED7AA; border-radius:16px; padding:14px; text-align:center;"><div style="font-size:28px; font-weight:900; color:#F97316;">12</div><div style="font-size:11px; font-weight:700; color:#C2410C;">🔥 day streak</div></div>'
+    +  '</div>';
+
+  // Proud Abbu button
+  h += '<div style="background:#1A1A3E; border-radius:16px; padding:16px; margin-bottom:12px; text-align:center;">'
+    +    '<div style="font-size:40px; margin-bottom:6px;">🦣</div>'
+    +    '<div style="font-size:15px; font-weight:800; color:#fff; margin-bottom:4px;">Send Ammu some love!</div>'
+    +    '<div style="font-size:11px; font-weight:600; color:#A5B4FC; margin-bottom:12px;">She will see your message pop up in her app 💙</div>'
+    +    '<button onclick="abbuShowProud()" style="background:#fff; color:#1A1A3E; font-size:15px; font-weight:800; padding:12px 28px; border-radius:14px; border:none; cursor:pointer; font-family:inherit;">🦣 Proud Abbu Button!</button>'
+    +    '<div id="abbu-proud-form" style="display:none; margin-top:12px;">'
+    +      '<textarea id="abbu-proud-msg" placeholder="Write your message to Ammu..." style="width:100%; padding:12px; border-radius:12px; border:none; font-size:13px; font-family:inherit; box-sizing:border-box; resize:none; height:70px;"></textarea>'
+    +      '<button onclick="abbuSendProud()" style="width:100%; margin-top:8px; background:#10B981; color:#fff; font-size:14px; font-weight:800; padding:10px; border-radius:12px; border:none; cursor:pointer; font-family:inherit;">Send to Ammu 💌</button>'
+    +    '</div>'
+    +    '<div id="abbu-proud-sent" style="display:none; margin-top:12px; font-size:13px; font-weight:800; color:#6EE7B7;">✅ Sent! Ammu will be so happy 🥰</div>'
+    +  '</div>';
+
+  // Today's checklist view (read-only)
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; overflow:hidden;">'
+    +    '<div style="padding:10px 16px; border-bottom:1px solid #F9FAFB; font-size:13px; font-weight:800; color:#1F2937;">✅ What Ammu ticked today</div>';
+  var checks = [['🏋️','Exercise','done'],['🥚','Egg','done'],['🥛','Yogurt','done'],['💧','Water (4 cups)','partial'],['🧘','Meditation','done'],['🌱','Fermented food','missing']];
+  for (var c = 0; c < checks.length; c++) {
+    var st = checks[c][2];
+    var icon = st === 'done' ? '✅' : st === 'partial' ? '🔶' : '⬜';
+    h += '<div style="display:flex; align-items:center; gap:12px; padding:9px 16px; border-bottom:1px solid #F9FAFB;"><span style="font-size:16px;">' + checks[c][0] + '</span><span style="flex:1; font-size:13px; font-weight:600; color:#374151;">' + checks[c][1] + '</span><span style="font-size:14px;">' + icon + '</span></div>';
+  }
+  h += '</div>';
+
+  h += '</div>';
+  return h;
+}
+
+function abbuShowProud() {
+  var form = document.getElementById('abbu-proud-form');
+  if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function abbuSendProud() {
+  var msg = document.getElementById('abbu-proud-msg');
+  var text = msg ? msg.value.trim() : '';
+  if (!text) { alert('Please write a message first!'); return; }
+  if (typeof submitData === 'function') submitData({ type:'proud_abbu', message:text, from:'abbu' });
+  var form = document.getElementById('abbu-proud-form');
+  var sent = document.getElementById('abbu-proud-sent');
+  if (form) form.style.display = 'none';
+  if (sent) sent.style.display = 'block';
+}
+
+
+/* ─── ABBU WEEKLY ────────────────────────────────────────────────────────── */
+
+function buildAbbuWeekly() {
+  var days = [['Mon',85],['Tue',70],['Wed',90],['Thu',45],['Fri',88],['Sat',75],['Sun',60]];
+  var h = '<div class="fadein" style="padding:14px;">';
+
+  // Bar chart
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:16px; margin-bottom:12px;">'
+    +    '<div style="font-size:13px; font-weight:800; color:#1F2937; margin-bottom:14px;">📈 This week\'s completion</div>'
+    +    '<div style="display:flex; align-items:flex-end; gap:6px; height:120px;">';
+  for (var i = 0; i < days.length; i++) {
+    var pct = days[i][1];
+    var col = pct >= 80 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#EF4444';
+    h += '<div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;">'
+      +    '<div style="font-size:9px; font-weight:800; color:#6B7280; margin-bottom:2px;">' + pct + '%</div>'
+      +    '<div style="width:100%; background:' + col + '; border-radius:4px 4px 0 0; height:' + pct + '%;"></div>'
+      +    '<div style="font-size:10px; font-weight:700; color:#9CA3AF; margin-top:4px;">' + days[i][0] + '</div></div>';
+  }
+  h += '</div></div>';
+
+  // Category breakdown
+  var cats = [['⚡','Exercise',92,'#0F6E56'],['🦴','Bones',85,'#0D9488'],['💪','Muscles',74,'#EA580C'],['🌱','Gut',68,'#DB2777'],['🧠','Brain',80,'#7C3AED'],['😊','Peace',55,'#2563EB']];
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:16px; margin-bottom:12px;">'
+    +    '<div style="font-size:13px; font-weight:800; color:#1F2937; margin-bottom:12px;">🎯 Category breakdown</div>';
+  for (var c = 0; c < cats.length; c++) {
+    h += '<div style="margin-bottom:10px;"><div style="display:flex; justify-content:space-between; margin-bottom:3px;"><span style="font-size:12px; font-weight:700; color:#374151;">' + cats[c][0] + ' ' + cats[c][1] + '</span><span style="font-size:12px; font-weight:800; color:' + cats[c][3] + ';">' + cats[c][2] + '%</span></div><div style="height:8px; background:#F3F4F6; border-radius:20px; overflow:hidden;"><div style="height:100%; background:' + cats[c][3] + '; border-radius:20px; width:' + cats[c][2] + '%;"></div></div></div>';
+  }
+  h += '</div>';
+
+  // Weekly note
+  h += '<div style="background:#1A1A3E; border-radius:16px; padding:16px;">'
+    +    '<div style="font-size:14px; font-weight:800; color:#fff; margin-bottom:8px;">💌 Send Ammu a weekly note</div>'
+    +    '<textarea id="abbu-weekly-note" placeholder="Write something encouraging about her week..." style="width:100%; padding:12px; border-radius:12px; border:none; font-size:13px; font-family:inherit; box-sizing:border-box; resize:none; height:80px;"></textarea>'
+    +    '<button onclick="abbuSaveWeeklyNote()" style="width:100%; margin-top:8px; background:#10B981; color:#fff; font-size:14px; font-weight:800; padding:10px; border-radius:12px; border:none; cursor:pointer; font-family:inherit;">Send note 💌</button>'
+    +    '<div id="abbu-note-sent" style="display:none; margin-top:8px; text-align:center; font-size:13px; font-weight:800; color:#6EE7B7;">✅ Note sent to Ammu!</div>'
+    +  '</div>';
+
+  h += '</div>';
+  return h;
+}
+
+function abbuSaveWeeklyNote() {
+  var note = document.getElementById('abbu-weekly-note');
+  var text = note ? note.value.trim() : '';
+  if (!text) { alert('Please write a note first!'); return; }
+  if (typeof submitData === 'function') submitData({ type:'weekly_note', from:'abbu', message:text });
+  var sent = document.getElementById('abbu-note-sent');
+  if (sent) sent.style.display = 'block';
+  if (note) note.value = '';
+}
+
+/* ─── ABBU REPORT ────────────────────────────────────────────────────────── */
+
+var abbuReportIndex = 0;
+
+function buildAbbuReport() {
+  var tmpl = ABBU_REPORT_TEMPLATES[abbuReportIndex % ABBU_REPORT_TEMPLATES.length];
+  var d = ABBU_REPORT_DATA;
+  var stats = tmpl.stats(d);
+  var note = tmpl.note(d);
+
+  var grades = [['⚡','Exercise','A+'],['🦴','Bones','A'],['💪','Muscles','B+'],['🌱','Gut','B'],['🧠','Brain','A'],['😊','Peace','B-']];
+
+  var h = '<div class="fadein" style="padding:14px;">';
+
+  h += '<div style="background:#fff; border-radius:16px; border:2px solid #1A1A3E; overflow:hidden; margin-bottom:12px;">'
+    +    '<div style="background:#1A1A3E; padding:16px; text-align:center;"><div style="font-size:28px;">📋</div><div style="font-size:17px; font-weight:900; color:#fff;">Ammu\'s Monthly Report</div><div style="font-size:11px; font-weight:600; color:#A5B4FC;">From Abbu, with love 💙</div></div>';
+
+  // Grades grid
+  h += '<div style="padding:16px; border-bottom:1px solid #F3F4F6;"><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">';
+  for (var g = 0; g < grades.length; g++) {
+    var grade = grades[g][2];
+    var gcol = grade.indexOf('A') === 0 ? '#10B981' : grade.indexOf('B') === 0 ? '#F59E0B' : '#EF4444';
+    h += '<div style="background:#F9FAFB; border-radius:12px; padding:10px; text-align:center;"><div style="font-size:20px;">' + grades[g][0] + '</div><div style="font-size:10px; font-weight:600; color:#9CA3AF;">' + grades[g][1] + '</div><div style="font-size:22px; font-weight:900; color:' + gcol + ';">' + grade + '</div></div>';
+  }
+  h += '</div></div>';
+
+  // Stats
+  h += '<div style="padding:8px 16px;">';
+  for (var s = 0; s < stats.length; s++) {
+    h += '<div style="display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid #F9FAFB;"><span style="font-size:18px;">' + stats[s].e + '</span><span style="flex:1; font-size:12px; font-weight:600; color:#6B7280;">' + stats[s].t + '</span><span style="font-size:13px; font-weight:800; color:#1F2937;">' + stats[s].v + '</span></div>';
+  }
+  h += '</div>';
+
+  // Personal note
+  h += '<div style="padding:16px; background:#F5F3FF; margin:0 16px 16px; border-radius:12px;"><div id="abbu-report-note" style="font-size:13px; font-weight:600; color:#5B21B6; line-height:1.6; font-style:italic;">' + note + '</div></div>';
+
+  h += '</div>';
+
+  // Regenerate
+  h += '<button onclick="abbuRegenReport()" style="width:100%; padding:12px; border-radius:12px; background:#fff; color:#1A1A3E; font-size:14px; font-weight:800; border:2px solid #1A1A3E; cursor:pointer; font-family:inherit; margin-bottom:12px;">🔄 Try a different report style</button>';
+
+  // Edit note
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:16px;">'
+    +    '<div style="font-size:13px; font-weight:800; color:#1F2937; margin-bottom:8px;">✏️ Add your own note</div>'
+    +    '<textarea id="abbu-note-input" placeholder="Write a personal message for the report..." style="width:100%; padding:12px; border-radius:12px; border:1px solid #E5E7EB; font-size:13px; font-family:inherit; box-sizing:border-box; resize:none; height:70px;"></textarea>'
+    +    '<button onclick="abbuSaveReportNote()" style="width:100%; margin-top:8px; background:#1A1A3E; color:#fff; font-size:14px; font-weight:800; padding:10px; border-radius:12px; border:none; cursor:pointer; font-family:inherit;">Save to report</button>'
+    +  '</div>';
+
+  h += '</div>';
+  return h;
+}
+
+function abbuRegenReport() {
+  abbuReportIndex++;
+  var page = document.getElementById('page-abbu-report');
+  if (page) page.innerHTML = buildAbbuReport();
+}
+
+function abbuSaveReportNote() {
+  var input = document.getElementById('abbu-note-input');
+  var text = input ? input.value.trim() : '';
+  if (!text) { alert('Please write a note first!'); return; }
+  var noteEl = document.getElementById('abbu-report-note');
+  if (noteEl) noteEl.textContent = text;
+  if (typeof submitData === 'function') submitData({ type:'weekly_note', from:'abbu_report', message:text });
+  alert('Note saved to the report! 💙');
+}
+
+
+/* ─── ABBU GOALS ─────────────────────────────────────────────────────────── */
+
+function buildAbbuGoals() {
+  var statusStyle = {
+    agreed:   { bg:'#ECFDF5', color:'#047857', border:'#A7F3D0', label:'✅ Agreed' },
+    proposed: { bg:'#FFFBEB', color:'#B45309', border:'#FDE68A', label:'⏳ Proposed' },
+    revised:  { bg:'#EFF6FF', color:'#1D4ED8', border:'#BFDBFE', label:'✏️ Revised' }
+  };
+  var whoEmoji = { Ammu:'🦁', Abbu:'🦣', Mumma:'🌸' };
+
+  var h = '<div class="fadein" style="padding:14px;">';
+  h += '<div style="background:#EEF2FF; border:1px solid #C7D2FE; border-radius:14px; padding:12px; margin-bottom:12px; font-size:11px; font-weight:700; color:#3730A3;">🎯 Goals are agreed together — Ammu proposes, Abbu revises, Mumma agrees!</div>';
+
+  for (var i = 0; i < abbuGoals.length; i++) {
+    var g = abbuGoals[i];
+    var ss = statusStyle[g.status] || statusStyle.proposed;
+    h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:14px; margin-bottom:10px;">'
+      +    '<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;"><span style="font-size:18px;">' + (whoEmoji[g.who] || '🎯') + '</span><span style="flex:1; font-size:11px; font-weight:700; color:#9CA3AF;">Set by ' + g.who + '</span><span style="font-size:10px; font-weight:800; padding:3px 8px; border-radius:20px; background:' + ss.bg + '; color:' + ss.color + '; border:1px solid ' + ss.border + ';">' + ss.label + '</span></div>'
+      +    '<div style="font-size:14px; font-weight:700; color:#1F2937; margin-bottom:10px;">' + g.text + '</div>'
+      +    '<div style="display:flex; gap:6px;">'
+      +      (g.status !== 'agreed' ? '<button onclick="abbuAgreeGoal(' + g.id + ')" style="flex:1; font-size:11px; font-weight:800; background:#10B981; color:#fff; padding:7px; border-radius:10px; border:none; cursor:pointer; font-family:inherit;">✅ Agree</button>' : '')
+      +      '<button onclick="abbuReviseGoal(' + g.id + ')" style="flex:1; font-size:11px; font-weight:800; background:#fff; color:#1D4ED8; padding:7px; border-radius:10px; border:1px solid #BFDBFE; cursor:pointer; font-family:inherit;">✏️ Revise</button>'
+      +    '</div>'
+      +  '</div>';
+  }
+
+  // Add new goal
+  h += '<div style="background:#fff; border-radius:16px; border:2px dashed #C7D2FE; padding:16px; margin-top:4px;">'
+    +    '<div style="font-size:13px; font-weight:800; color:#1F2937; margin-bottom:8px;">➕ Add a new goal</div>'
+    +    '<textarea id="abbu-new-goal" placeholder="e.g. Drink 6 glasses of water every day" style="width:100%; padding:12px; border-radius:12px; border:1px solid #E5E7EB; font-size:13px; font-family:inherit; box-sizing:border-box; resize:none; height:60px;"></textarea>'
+    +    '<button onclick="abbuAddGoal()" style="width:100%; margin-top:8px; background:#1A1A3E; color:#fff; font-size:14px; font-weight:800; padding:10px; border-radius:12px; border:none; cursor:pointer; font-family:inherit;">Propose this goal</button>'
+    +  '</div>';
+
+  h += '</div>';
+  return h;
+}
+
+function abbuAgreeGoal(id) {
+  for (var i = 0; i < abbuGoals.length; i++) { if (abbuGoals[i].id === id) abbuGoals[i].status = 'agreed'; }
+  abbuSaveGoals();
+  var page = document.getElementById('page-abbu-goals');
+  if (page) page.innerHTML = buildAbbuGoals();
+}
+
+function abbuReviseGoal(id) {
+  var newText = prompt('Revise this goal:');
+  if (!newText) return;
+  for (var i = 0; i < abbuGoals.length; i++) { if (abbuGoals[i].id === id) { abbuGoals[i].text = newText; abbuGoals[i].status = 'revised'; abbuGoals[i].who = 'Abbu'; } }
+  abbuSaveGoals();
+  var page = document.getElementById('page-abbu-goals');
+  if (page) page.innerHTML = buildAbbuGoals();
+}
+
+function abbuAddGoal() {
+  var input = document.getElementById('abbu-new-goal');
+  var text = input ? input.value.trim() : '';
+  if (!text) { alert('Please write a goal first!'); return; }
+  var newId = Date.now();
+  abbuGoals.push({ id:newId, who:'Abbu', text:text, status:'proposed' });
+  abbuSaveGoals();
+  var page = document.getElementById('page-abbu-goals');
+  if (page) page.innerHTML = buildAbbuGoals();
+}
+
+/* ─── ABBU ALERTS ────────────────────────────────────────────────────────── */
+
+function buildAbbuAlerts() {
+  var h = '<div class="fadein" style="padding:14px;">';
+
+  // Reward approvals
+  h += '<div style="font-size:10px; font-weight:800; color:#9CA3AF; text-transform:uppercase; letter-spacing:1.5px; padding:6px 0;">🎁 Reward requests to approve</div>';
+  var pendingCount = 0;
+  for (var i = 0; i < abbuRewards.length; i++) {
+    var r = abbuRewards[i];
+    if (r.status === 'pending') pendingCount++;
+    var statusBadge = r.status === 'approved' ? '<span style="font-size:10px; font-weight:800; color:#047857;">✅ Approved</span>'
+      : r.status === 'rejected' ? '<span style="font-size:10px; font-weight:800; color:#DC2626;">❌ Declined</span>' : '';
+    h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:14px; margin-bottom:10px;">'
+      +    '<div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;"><span style="flex:1; font-size:14px; font-weight:800; color:#1F2937;">' + r.item + '</span>' + statusBadge + '</div>'
+      +    '<div style="font-size:11px; font-weight:600; color:#9CA3AF; margin-bottom:10px;">From ' + r.from + ' — ' + r.detail + '</div>'
+      +    (r.status === 'pending' ? '<div style="display:flex; gap:6px;"><button onclick="abbuApprove(' + r.id + ')" style="flex:1; font-size:12px; font-weight:800; background:#10B981; color:#fff; padding:8px; border-radius:10px; border:none; cursor:pointer; font-family:inherit;">✅ Approve</button><button onclick="abbuReject(' + r.id + ')" style="flex:1; font-size:12px; font-weight:800; background:#fff; color:#DC2626; padding:8px; border-radius:10px; border:1px solid #FCA5A5; cursor:pointer; font-family:inherit;">Decline</button></div>' : '')
+      +  '</div>';
+  }
+  if (pendingCount === 0 && abbuRewards.length === 0) {
+    h += '<div style="background:#F9FAFB; border-radius:12px; padding:20px; text-align:center; font-size:12px; color:#9CA3AF; font-weight:600;">No pending requests</div>';
+  }
+
+  // Notifications
+  h += '<div style="font-size:10px; font-weight:800; color:#9CA3AF; text-transform:uppercase; letter-spacing:1.5px; padding:14px 0 6px;">🔔 Recent activity</div>';
+  var notifs = [['🔥','Ammu hit a 12-day streak!','2 hours ago'],['🥚','Ate egg 6 days this week','Today'],['📏','New measurements added','Yesterday'],['😊','Mood: Happy 4 days running','This week']];
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; overflow:hidden; margin-bottom:12px;">';
+  for (var n = 0; n < notifs.length; n++) {
+    h += '<div style="display:flex; align-items:center; gap:12px; padding:11px 16px; border-bottom:1px solid #F9FAFB;"><span style="font-size:18px;">' + notifs[n][0] + '</span><span style="flex:1; font-size:13px; font-weight:600; color:#374151;">' + notifs[n][1] + '</span><span style="font-size:10px; font-weight:600; color:#D1D5DB;">' + notifs[n][2] + '</span></div>';
+  }
+  h += '</div>';
+
+  // Secret story editor
+  h += '<div style="font-size:10px; font-weight:800; color:#9CA3AF; text-transform:uppercase; letter-spacing:1.5px; padding:6px 0;">💌 Secret stories editor</div>';
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:16px;">'
+    +    '<div style="font-size:11px; font-weight:600; color:#9CA3AF; margin-bottom:8px;">Write the secret stories Ammu unlocks at each milestone</div>'
+    +    '<select id="abbu-story-day" style="width:100%; padding:10px; border-radius:10px; border:1px solid #E5E7EB; font-size:13px; font-weight:700; font-family:inherit; margin-bottom:8px;">'
+    +      '<option value="7">Day 7 story</option><option value="14">Day 14 story</option><option value="21">Day 21 story</option><option value="30">Day 30 story</option><option value="90">Month 3 story</option>'
+    +    '</select>'
+    +    '<textarea id="abbu-story-text" placeholder="Write a special memory or secret..." style="width:100%; padding:12px; border-radius:12px; border:1px solid #E5E7EB; font-size:13px; font-family:inherit; box-sizing:border-box; resize:none; height:80px;"></textarea>'
+    +    '<button onclick="abbuSaveStory()" style="width:100%; margin-top:8px; background:#1A1A3E; color:#fff; font-size:14px; font-weight:800; padding:10px; border-radius:12px; border:none; cursor:pointer; font-family:inherit;">Save secret story</button>'
+    +  '</div>';
+
+  h += '</div>';
+  return h;
+}
+
+function abbuApprove(id) {
+  for (var i = 0; i < abbuRewards.length; i++) { if (abbuRewards[i].id === id) abbuRewards[i].status = 'approved'; }
+  abbuSaveRewards();
+  var page = document.getElementById('page-abbu-alerts');
+  if (page) page.innerHTML = buildAbbuAlerts();
+}
+
+function abbuReject(id) {
+  for (var i = 0; i < abbuRewards.length; i++) { if (abbuRewards[i].id === id) abbuRewards[i].status = 'rejected'; }
+  abbuSaveRewards();
+  var page = document.getElementById('page-abbu-alerts');
+  if (page) page.innerHTML = buildAbbuAlerts();
+}
+
+function abbuSaveStory() {
+  var day = document.getElementById('abbu-story-day');
+  var text = document.getElementById('abbu-story-text');
+  if (!text || !text.value.trim()) { alert('Please write a story first!'); return; }
+  if (typeof submitData === 'function') submitData({ type:'secret_story', from:'abbu', day:day.value, message:text.value.trim() });
+  alert('Secret story saved for Day ' + day.value + '! Ammu will unlock it at that milestone. 💌');
+  text.value = '';
+}
+
+/* ─── ABBU PROGRESS ──────────────────────────────────────────────────────── */
+
+function buildAbbuProgress() {
+  var meas = [['📏','Height','139cm','+0.5'],['⚖️','Weight','33.2kg','+0.8'],['💪','Bicep','19cm','+1'],['✋','Forearm','17cm','+0.5'],['🫁','Waist','58cm','0'],['🏊','Shoulder','34cm','+0.5']];
+  var h = '<div class="fadein" style="padding:14px;">';
+
+  h += '<div style="font-size:10px; font-weight:800; color:#9CA3AF; text-transform:uppercase; letter-spacing:1.5px; text-align:center; padding:6px 0 12px;">📏 Measurements</div>';
+  h += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">';
+  for (var i = 0; i < meas.length; i++) {
+    var m = meas[i];
+    h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:12px;"><div style="font-size:20px;">' + m[0] + '</div><div style="font-size:11px; font-weight:600; color:#9CA3AF;">' + m[1] + '</div><div style="font-size:18px; font-weight:900; color:#1A1A3E;">' + m[2] + '</div><div style="font-size:10px; font-weight:800; color:' + (m[3] === '0' ? '#9CA3AF' : '#10B981') + ';">' + (m[3] === '0' ? 'no change' : '+' + m[3] + ' this month') + '</div></div>';
+  }
+  h += '</div>';
+
+  // Mood trend
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:16px; margin-bottom:12px;">'
+    +    '<div style="font-size:13px; font-weight:800; color:#1F2937; margin-bottom:12px;">😊 Mood this week</div>'
+    +    '<div style="display:flex; justify-content:space-between; align-items:flex-end;">';
+  var moods = [['Mon','😊'],['Tue','🙂'],['Wed','🌟'],['Thu','😐'],['Fri','😊'],['Sat','🙂'],['Sun','😊']];
+  for (var md = 0; md < moods.length; md++) {
+    h += '<div style="text-align:center;"><div style="font-size:24px;">' + moods[md][1] + '</div><div style="font-size:10px; font-weight:700; color:#9CA3AF; margin-top:2px;">' + moods[md][0] + '</div></div>';
+  }
+  h += '</div></div>';
+
+  // Push-up progress
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:16px; margin-bottom:12px;">'
+    +    '<div style="font-size:13px; font-weight:800; color:#1F2937; margin-bottom:12px;">💪 Push-up progress</div>'
+    +    '<div style="display:flex; align-items:flex-end; gap:10px; height:80px;">';
+  var pushups = [['Mar',3],['Apr',5],['May',8]];
+  for (var p = 0; p < pushups.length; p++) {
+    var ph = pushups[p][1] * 9;
+    h += '<div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;"><div style="font-size:13px; font-weight:900; color:#1A1A3E;">' + pushups[p][1] + '</div><div style="width:100%; background:#1A1A3E; border-radius:4px 4px 0 0; height:' + ph + 'px;"></div><div style="font-size:10px; font-weight:700; color:#9CA3AF; margin-top:4px;">' + pushups[p][0] + '</div></div>';
+  }
+  h += '</div><div style="text-align:center; font-size:12px; font-weight:800; color:#10B981; margin-top:10px;">📈 Getting stronger every month!</div></div>';
+
+  // Link to report
+  h += '<button onclick="abbuGoReport()" style="width:100%; padding:14px; border-radius:14px; background:#1A1A3E; color:#fff; font-size:15px; font-weight:800; border:none; cursor:pointer; font-family:inherit;">📋 See full monthly report</button>';
+
+  h += '</div>';
+  return h;
+}
+
+function abbuGoReport() {
+  var btns = document.querySelectorAll('#bottom-nav button');
+  if (btns[2]) btns[2].click();
+}
+
+/* ─── ABBU PAGE DISPATCH ─────────────────────────────────────────────────── */
+
+function renderAbbuPage(pageId) {
+  if (pageId === 'today')    return buildAbbuToday();
+  if (pageId === 'weekly')   return buildAbbuWeekly();
+  if (pageId === 'report')   return buildAbbuReport();
+  if (pageId === 'goals')    return buildAbbuGoals();
+  if (pageId === 'alerts')   return buildAbbuAlerts();
+  if (pageId === 'progress') return buildAbbuProgress();
+  return null;
+}
