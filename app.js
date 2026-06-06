@@ -871,3 +871,585 @@ function renderAmmuPage(pageId) {
   if (pageId === 'progress') return buildAmmuProgress();
   return null;
 }
+
+
+/* ============================================================================
+   MODULE 3: MUMMA'S SECTION
+   Pages: Home, Grocery, Meals, Check, Progress
+   Priority: REDUCE Mumma's workload. Minimal taps.
+   ============================================================================ */
+
+/* ─── MUMMA DATA ─────────────────────────────────────────────────────────── */
+
+var MUMMA_MEAL_PLAN = {
+  Mon: { type:'easy',  meals:[{t:'Breakfast',m:'Egg on toast 🥚',egg:true},{t:'Lunch',m:'Yogurt + fruit + dry fruits'},{t:'Dinner',m:'Leftover or simple dal + rice'}]},
+  Tue: { type:'cook',  meals:[{t:'Breakfast',m:'Toast + fruit'},{t:'Lunch',m:'Cook prepares — dal + rice + sabzi'},{t:'Dinner',m:'Cook\'s food + yogurt',egg:true}]},
+  Wed: { type:'left',  meals:[{t:'Breakfast',m:'Scrambled egg + toast',egg:true},{t:'Lunch',m:'Tuesday\'s cook food reheated'},{t:'Dinner',m:'Paneer stir-fry — 15 mins'}]},
+  Thu: { type:'quick', meals:[{t:'Breakfast',m:'Egg any style + toast',egg:true},{t:'Lunch',m:'Yogurt + fruit + dry fruits'},{t:'Dinner',m:'Simple chicken curry — 20 mins'}]},
+  Fri: { type:'quick', meals:[{t:'Breakfast',m:'Egg + avocado toast',egg:true},{t:'Lunch',m:'Dal + rice (reheated or fresh)'},{t:'Dinner',m:'Omelette + salad — 10 mins',egg:true}]},
+  Sat: { type:'cook',  meals:[{t:'Breakfast',m:'Toast + fruit'},{t:'Lunch',m:'Cook prepares — fish curry + rice'},{t:'Dinner',m:'Cook\'s food + yogurt'}]},
+  Sun: { type:'easy',  meals:[{t:'Breakfast',m:'Egg + any choice',egg:true},{t:'Lunch',m:'Family meal — enjoy!'},{t:'Dinner',m:'Light meal + yogurt'}]},
+};
+
+var MUMMA_GROCERY = [
+  { id:'staples', label:'Kitchen staples', emoji:'🏠', why:'The backbone of every meal', color:'gray',
+    items:[
+      {id:'eggs',       e:'🥚', name:'Free range eggs',           qty:'1 dozen',    rot:'last',  tags:['Tesco','Waitrose']},
+      {id:'onion',      e:'🧅', name:'Onions',                    qty:'1kg bag',    rot:'last',  tags:['Tesco']},
+      {id:'garlic',     e:'🧄', name:'Garlic',                    qty:'2 bulbs',    rot:'last',  tags:['Tesco']},
+      {id:'ginger',     e:'🫚', name:'Fresh ginger',              qty:'Large piece',rot:'two',   tags:['Indian shop']},
+      {id:'potato',     e:'🥔', name:'Potatoes',                  qty:'1kg',        rot:'fresh', tags:['Tesco']},
+      {id:'tomato',     e:'🍅', name:'Tomatoes',                  qty:'6 pack',     rot:'last',  tags:['Tesco']},
+      {id:'chilli',     e:'🌶️', name:'Green chillies',            qty:'Small pack', rot:'two',   tags:['Indian shop']},
+      {id:'coconut',    e:'🥥', name:'Frozen grated coconut',    qty:'Bag',        rot:'fresh', tags:['Indian shop']},
+      {id:'curryleaves',e:'🌿', name:'Curry leaves (fresh/frozen)',qty:'Pack',      rot:'none',  tags:['Indian shop']},
+      {id:'cotoil',     e:'🫙', name:'Coconut oil',               qty:'Jar',        rot:'two',   tags:['Indian shop','Waitrose']},
+      {id:'rice',       e:'🍚', name:'Basmati rice',              qty:'2kg',        rot:'last',  tags:['Indian shop','Tesco']},
+      {id:'atta',       e:'🌾', name:'Whole wheat atta',          qty:'1kg',        rot:'two',   tags:['Indian shop']},
+      {id:'mustard',    e:'🟡', name:'Mustard seeds',             qty:'Small pack', rot:'none',  tags:['Indian shop']},
+      {id:'turmeric',   e:'🟡', name:'Turmeric powder (haldi)',   qty:'Pack',       rot:'none',  tags:['Indian shop']},
+      {id:'cuminseeds', e:'🟤', name:'Cumin seeds (jeera)',       qty:'Pack',       rot:'none',  tags:['Indian shop']},
+    ]
+  },
+  { id:'fruits', label:'Fruits', emoji:'🍎', why:'1 fruit per day — vitamins & brain power', color:'pink',
+    items:[
+      {id:'banana',      e:'🍌', name:'Bananas',        qty:'1 bunch',  rot:'last',  tags:['M&S','Tesco']},
+      {id:'apple',       e:'🍎', name:'Apples',         qty:'4-5',      rot:'last',  tags:['M&S']},
+      {id:'orange',      e:'🍊', name:'Oranges',        qty:'4',        rot:'two',   tags:['M&S']},
+      {id:'pomegranate', e:'🍇', name:'Pomegranate',    qty:'1-2',      rot:'fresh', tags:['M&S','Indian shop']},
+      {id:'blueberry',   e:'🫐', name:'Blueberries',    qty:'Punnet',   rot:'fresh', tags:['M&S']},
+      {id:'mango',       e:'🥭', name:'Mango',          qty:'1-2',      rot:'two',   tags:['M&S','Indian shop']},
+      {id:'strawberry',  e:'🍓', name:'Strawberries',   qty:'Punnet',   rot:'fresh', tags:['M&S']},
+      {id:'pear',        e:'🍐', name:'Pears',          qty:'3-4',      rot:'fresh', tags:['M&S']},
+      {id:'grapes',      e:'🍇', name:'Grapes',         qty:'Punnet',   rot:'none',  tags:['M&S']},
+      {id:'kiwi',        e:'🥝', name:'Kiwi',           qty:'4',        rot:'fresh', tags:['M&S','Tesco']},
+      {id:'melon',       e:'🍈', name:'Melon / watermelon',qty:'1 small',rot:'fresh',tags:['M&S']},
+    ]
+  },
+  { id:'dry', label:'Dry fruits & nuts', emoji:'🥜', why:'Daily TV snack — muscle & brain fuel', color:'amber',
+    items:[
+      {id:'almonds',    e:'🥜', name:'Almonds',            qty:'200g',    rot:'last',  tags:['Indian shop','Tesco']},
+      {id:'walnuts',    e:'🌰', name:'Walnuts',            qty:'150g',    rot:'last',  tags:['Indian shop','Waitrose']},
+      {id:'cashews',    e:'🥜', name:'Cashews',            qty:'150g',    rot:'two',   tags:['Indian shop']},
+      {id:'pistachios', e:'🥜', name:'Pistachios',         qty:'150g',    rot:'fresh', tags:['Indian shop']},
+      {id:'dates',      e:'🫘', name:'Dates (Medjool)',    qty:'Box',     rot:'fresh', tags:['Indian shop','Waitrose']},
+      {id:'raisins',    e:'🍇', name:'Raisins / sultanas', qty:'Small bag',rot:'none', tags:['Tesco','Indian shop']},
+      {id:'figs',       e:'🫐', name:'Dried figs',         qty:'Pack',    rot:'fresh', tags:['Waitrose','Indian shop']},
+      {id:'pecan',      e:'🥜', name:'Pecan nuts',         qty:'100g',    rot:'fresh', tags:['Waitrose']},
+    ]
+  },
+  { id:'snacks', label:'Healthy snacks', emoji:'🍿', why:'Quick grab options for busy days', color:'green',
+    items:[
+      {id:'cheese',       e:'🧀', name:'Cheddar cheese sticks',  qty:'Pack',  rot:'two',   tags:['Tesco']},
+      {id:'hummus',       e:'🫙', name:'Hummus',                 qty:'Tub',   rot:'fresh', tags:['Tesco','Waitrose']},
+      {id:'peanutbutter', e:'🫙', name:'Peanut butter (no sugar)',qty:'Jar',  rot:'none',  tags:['Tesco']},
+      {id:'oatcakes',     e:'🍪', name:'Oatcakes',               qty:'Pack',  rot:'fresh', tags:['Tesco','Waitrose']},
+      {id:'avocado',      e:'🥑', name:'Avocado',                qty:'2',     rot:'two',   tags:['Waitrose','M&S']},
+      {id:'darkchoc',     e:'🍫', name:'Dark chocolate (70%+)',  qty:'Small bar',rot:'fresh',tags:['Waitrose','Tesco']},
+      {id:'ricecakes',    e:'🍘', name:'Rice cakes (plain)',     qty:'Pack',  rot:'fresh', tags:['Tesco']},
+      {id:'popcorn',      e:'🍿', name:'Plain popcorn',          qty:'Pack',  rot:'none',  tags:['Tesco']},
+    ]
+  },
+  { id:'bone', label:'Strong bones 🦴', emoji:'🦴', why:'Calcium + Vitamin D — builds strong bones', color:'teal',
+    items:[
+      {id:'yogurt',    e:'🥛', name:'Plain yogurt (full fat)',  qty:'500g',      rot:'last',  tags:['Tesco','Waitrose']},
+      {id:'greekyog',  e:'🥛', name:'Greek yogurt',             qty:'500g',      rot:'two',   tags:['Tesco','Waitrose']},
+      {id:'paneer',    e:'🧀', name:'Paneer',                   qty:'400g',      rot:'two',   tags:['Indian shop','Waitrose']},
+      {id:'broccoli',  e:'🥦', name:'Broccoli',                 qty:'1 head',    rot:'fresh', tags:['Waitrose']},
+      {id:'spinach',   e:'🌿', name:'Spinach',                  qty:'200g bag',  rot:'two',   tags:['Waitrose','Tesco']},
+      {id:'kale',      e:'🥬', name:'Kale',                     qty:'Bag',       rot:'fresh', tags:['Waitrose']},
+      {id:'salmon',    e:'🐟', name:'Salmon fillets',           qty:'2 fillets', rot:'fresh', tags:['Waitrose']},
+      {id:'sardines',  e:'🐟', name:'Sardines (tinned)',        qty:'2 tins',    rot:'fresh', tags:['Tesco']},
+      {id:'sesame',    e:'🫘', name:'Sesame seeds (til)',       qty:'Small bag', rot:'none',  tags:['Indian shop']},
+      {id:'cheddar',   e:'🧀', name:'Cheddar cheese',          qty:'Small block',rot:'two',  tags:['Tesco','Waitrose']},
+      {id:'oatmilk',   e:'🫙', name:'Fortified oat milk',      qty:'1L',        rot:'fresh', tags:['Tesco']},
+    ]
+  },
+  { id:'muscle', label:'Muscle power 💪', emoji:'💪', why:'Protein — builds & repairs muscles', color:'orange',
+    items:[
+      {id:'chicken',   e:'🍗', name:'Chicken thighs',         qty:'500g', rot:'two',   tags:['Waitrose']},
+      {id:'chickbr',   e:'🍗', name:'Chicken breast',         qty:'400g', rot:'two',   tags:['Waitrose','M&S']},
+      {id:'dal',       e:'🫘', name:'Red lentils (masoor dal)',qty:'500g', rot:'last',  tags:['Indian shop','Tesco']},
+      {id:'moong',     e:'🫘', name:'Yellow moong dal',       qty:'500g', rot:'two',   tags:['Indian shop']},
+      {id:'chickpeas', e:'🫘', name:'Chickpeas (tinned)',     qty:'400g tin',rot:'fresh',tags:['Tesco']},
+      {id:'fish',      e:'🐟', name:'White fish fillets',     qty:'2',    rot:'fresh', tags:['Waitrose']},
+      {id:'tuna',      e:'🐟', name:'Tuna (tinned)',          qty:'2 tins',rot:'fresh',tags:['Tesco']},
+      {id:'lamb',      e:'🥩', name:'Lamb mince',             qty:'300g', rot:'fresh', tags:['Waitrose']},
+      {id:'tofu',      e:'🟤', name:'Tofu (firm)',            qty:'Pack', rot:'fresh', tags:['Waitrose','Tesco']},
+      {id:'pbutter2',  e:'🫙', name:'Nut butter (almond)',    qty:'Jar',  rot:'none',  tags:['Waitrose']},
+    ]
+  },
+  { id:'gut', label:'Happy tummy 🌱', emoji:'🌱', why:'Fermented foods — heals digestion', color:'pink',
+    items:[
+      {id:'dosa',      e:'🫓', name:'Dosa batter (ready-made)',  qty:'1kg tub', rot:'two',   tags:['Indian shop','Elif']},
+      {id:'idli',      e:'🫓', name:'Idli batter (ready-made)',  qty:'1kg tub', rot:'fresh', tags:['Indian shop','Elif']},
+      {id:'oats2',     e:'🌾', name:'Rolled oats',               qty:'500g',    rot:'fresh', tags:['Tesco']},
+      {id:'sourdough', e:'🍞', name:'Sourdough bread',           qty:'Loaf',    rot:'none',  tags:['Waitrose']},
+      {id:'kimchi',    e:'🫙', name:'Kimchi (small jar)',        qty:'Jar',     rot:'fresh', tags:['Waitrose']},
+      {id:'kefir',     e:'🥛', name:'Kefir (plain)',             qty:'Bottle',  rot:'fresh', tags:['Waitrose']},
+      {id:'sweetpot',  e:'🍠', name:'Sweet potato',             qty:'2-3',     rot:'fresh', tags:['Waitrose','Tesco']},
+      {id:'kidney',    e:'🫘', name:'Kidney beans (tinned)',     qty:'Tin',     rot:'fresh', tags:['Tesco']},
+      {id:'garlic2',   e:'🧄', name:'Garlic (prebiotic)',        qty:'Bulb',    rot:'last',  tags:['Tesco']},
+      {id:'banana2',   e:'🍌', name:'Bananas (prebiotic fibre)', qty:'Bunch',   rot:'last',  tags:['Tesco','M&S']},
+    ]
+  },
+  { id:'brain', label:'Brain power 🧠', emoji:'🧠', why:'Omega-3 + antioxidants — sharp memory', color:'purple',
+    items:[
+      {id:'flax',      e:'🌱', name:'Flaxseeds (alsi)',          qty:'Small bag',  rot:'fresh', tags:['Indian shop']},
+      {id:'darkchoc2', e:'🍫', name:'Dark chocolate (70%+)',     qty:'Bar',        rot:'fresh', tags:['Waitrose']},
+      {id:'avocado2',  e:'🥑', name:'Avocado',                   qty:'2',          rot:'two',   tags:['Waitrose']},
+      {id:'salmon2',   e:'🐟', name:'Salmon (Omega-3)',          qty:'2 fillets',  rot:'fresh', tags:['Waitrose']},
+      {id:'eggs2',     e:'🥚', name:'Eggs (choline for brain)',  qty:'Already in staples',rot:'last',tags:['Tesco']},
+      {id:'walnuts2',  e:'🌰', name:'Walnuts (already in nuts)', qty:'Already in dry fruits',rot:'last',tags:['Indian shop']},
+      {id:'blueberry2',e:'🫐', name:'Blueberries (already in fruits)',qty:'Already in fruits',rot:'fresh',tags:['M&S']},
+      {id:'turmeric2', e:'🟡', name:'Turmeric latte mix',        qty:'Pack',       rot:'fresh', tags:['Waitrose']},
+      {id:'greentea',  e:'🍵', name:'Green tea bags',            qty:'Box',        rot:'fresh', tags:['Tesco','Waitrose']},
+    ]
+  },
+  { id:'energy', label:'Energy & veg 🥕', emoji:'⚡', why:'Complex carbs + iron — energy all day', color:'amber',
+    items:[
+      {id:'carrot',    e:'🥕', name:'Carrots',                   qty:'500g bag',rot:'two',   tags:['Waitrose','Tesco']},
+      {id:'beetroot',  e:'🫀', name:'Beetroot',                  qty:'2-3',     rot:'none',  tags:['Waitrose']},
+      {id:'pumpkin',   e:'🎃', name:'Pumpkin',                   qty:'Small piece',rot:'fresh',tags:['Waitrose','Indian shop']},
+      {id:'okra',      e:'🫑', name:'Okra (bhindi)',             qty:'200g',    rot:'fresh', tags:['Indian shop','Elif']},
+      {id:'greenbeans',e:'🫘', name:'Green beans',               qty:'200g',    rot:'two',   tags:['Waitrose']},
+      {id:'cauliflower',e:'🥦',name:'Cauliflower',               qty:'1 head',  rot:'fresh', tags:['Waitrose','Tesco']},
+      {id:'cabbage',   e:'🥬', name:'Cabbage',                   qty:'Half',    rot:'fresh', tags:['Tesco']},
+      {id:'zucchini',  e:'🥒', name:'Zucchini / courgette',     qty:'2',       rot:'fresh', tags:['Waitrose']},
+      {id:'corn',      e:'🌽', name:'Sweetcorn (tinned)',        qty:'Tin',     rot:'fresh', tags:['Tesco']},
+      {id:'mushroom',  e:'🍄', name:'Mushrooms (NOT for Ammu — Mumma only)',qty:'Pack',rot:'none',tags:['Tesco']},
+    ]
+  },
+];
+
+var SHOPS = ['Tesco','Waitrose','M&S','Indian shop','Cook brings','Other'];
+
+var SHOP_STYLE = {
+  'Tesco':       { bg:'#DBEAFE', color:'#1D4ED8', border:'#BFDBFE' },
+  'Waitrose':    { bg:'#D1FAE5', color:'#047857', border:'#A7F3D0' },
+  'M&S':         { bg:'#FCE7F3', color:'#BE185D', border:'#FBCFE8' },
+  'Indian shop': { bg:'#FFEDD5', color:'#C2410C', border:'#FED7AA' },
+  'Cook brings': { bg:'#EDE9FE', color:'#6D28D9', border:'#DDD6FE' },
+  'Other':       { bg:'#F3F4F6', color:'#4B5563', border:'#E5E7EB' }
+};
+
+var ROT_STYLE = {
+  last:  { bg:'#FEF2F2', color:'#DC2626', dot:'#F87171', label:'Last week' },
+  two:   { bg:'#FFF7ED', color:'#EA580C', dot:'#FB923C', label:'2 weeks ago' },
+  fresh: { bg:'#ECFDF5', color:'#059669', dot:'#34D399', label:'Not recent' },
+  none:  { bg:'#F9FAFB', color:'#6B7280', dot:'#D1D5DB', label:'Not tracked' }
+};
+
+/* ─── MUMMA STATE (persisted) ────────────────────────────────────────────── */
+
+var MummaState = {
+  cookDays:  JSON.parse(localStorage.getItem('mumma_cook_days') || '["Tue","Sat"]'),
+  selected:  JSON.parse(localStorage.getItem('mumma_selected')  || '{}'),
+  shops:     JSON.parse(localStorage.getItem('mumma_shops')     || '{}')
+};
+
+function mummaSave() {
+  localStorage.setItem('mumma_cook_days', JSON.stringify(MummaState.cookDays));
+  localStorage.setItem('mumma_selected',  JSON.stringify(MummaState.selected));
+  localStorage.setItem('mumma_shops',     JSON.stringify(MummaState.shops));
+}
+
+
+/* ─── MUMMA HOME ─────────────────────────────────────────────────────────── */
+
+function buildMummaHome() {
+  var day = getDayName();
+  var plan = MUMMA_MEAL_PLAN[day] || MUMMA_MEAL_PLAN.Mon;
+  var typeLabels = { cook:'Cook day 👩‍🍳', left:'Leftover ♻️', quick:'Quick cook ⚡', easy:'Easy day 😊' };
+  var typeStyle = { cook:['#D1FAE5','#047857'], left:['#F3F4F6','#4B5563'], quick:['#FFEDD5','#C2410C'], easy:['#DBEAFE','#1D4ED8'] };
+  var ts = typeStyle[plan.type] || typeStyle.easy;
+
+  var h = '<div class="fadein" style="padding:14px;">';
+
+  // Quick actions
+  var actions = [['🛒','Grocery','Plan shopping',1],['🍽️','Meals','This week',2],['✅','Check','Confirm day',3],['📈','Progress','How she\'s doing',4]];
+  h += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">';
+  for (var i = 0; i < actions.length; i++) {
+    var a = actions[i];
+    h += '<button onclick="mummaNav(' + a[3] + ')" style="background:#fff; border:1px solid #F3F4F6; border-radius:16px; padding:14px; text-align:left; cursor:pointer; font-family:inherit;">'
+      +    '<div style="font-size:24px; margin-bottom:6px;">' + a[0] + '</div>'
+      +    '<div style="font-size:13px; font-weight:800; color:#1F2937;">' + a[1] + '</div>'
+      +    '<div style="font-size:11px; font-weight:600; color:#9CA3AF; margin-top:1px;">' + a[2] + '</div></button>';
+  }
+  h += '</div>';
+
+  // Today's meals
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; overflow:hidden; margin-bottom:12px;">'
+    +    '<div style="display:flex; align-items:center; gap:8px; padding:10px 16px; border-bottom:1px solid #F9FAFB;">'
+    +      '<span style="font-size:18px;">🍽️</span><span style="flex:1; font-size:13px; font-weight:800; color:#1F2937;">Today — ' + day + '</span>'
+    +      '<span style="font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; background:' + ts[0] + '; color:' + ts[1] + ';">' + typeLabels[plan.type] + '</span>'
+    +    '</div>';
+  for (var m = 0; m < plan.meals.length; m++) {
+    var meal = plan.meals[m];
+    h += '<div style="display:flex; align-items:flex-start; gap:12px; padding:10px 16px; border-bottom:1px solid #F9FAFB;">'
+      +    '<span style="font-size:11px; font-weight:700; color:#9CA3AF; width:60px; padding-top:1px;">' + meal.t + '</span>'
+      +    '<span style="flex:1; font-size:13px; font-weight:600; color:#374151;">' + meal.m + (meal.egg ? ' <span style="font-size:10px; font-weight:700; padding:1px 6px; border-radius:20px; background:#FFEDD5; color:#C2410C;">🥚 egg</span>' : '') + '</span></div>';
+  }
+  h += '</div>';
+
+  // Cook days picker
+  var allDays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:16px; margin-bottom:12px;">'
+    +    '<div style="font-size:13px; font-weight:800; color:#1F2937; margin-bottom:10px;">📅 Cook days this week — tap to set</div>'
+    +    '<div style="display:flex; gap:6px; flex-wrap:wrap;">';
+  for (var d = 0; d < allDays.length; d++) {
+    var dn = allDays[d];
+    var on = MummaState.cookDays.indexOf(dn) >= 0;
+    h += '<button onclick="mummaToggleCook(\'' + dn + '\',this)" style="padding:6px 12px; border-radius:20px; font-size:11px; font-weight:800; border:1px solid ' + (on ? '#185FA5' : '#E5E7EB') + '; background:' + (on ? '#185FA5' : '#fff') + '; color:' + (on ? '#fff' : '#9CA3AF') + '; cursor:pointer; font-family:inherit;">' + dn + '</button>';
+  }
+  h += '</div></div>';
+
+  // Food swaps (collapsible)
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; overflow:hidden; margin-bottom:12px;">'
+    +    '<button onclick="mummaToggleSwap()" style="width:100%; display:flex; align-items:center; gap:10px; padding:12px 16px; background:none; border:none; cursor:pointer; font-family:inherit;">'
+    +      '<span style="font-size:18px;">🔄</span><span style="flex:1; font-size:13px; font-weight:700; color:#185FA5; text-align:left;">Can\'t find a food? See quick swaps</span><span id="m-swap-arrow" style="color:#9CA3AF;">▾</span>'
+    +    '</button>'
+    +    '<div id="m-swap-list" style="display:none; background:#EFF6FF; padding:12px 16px;">';
+  var swaps = [['🥚','No eggs?','Extra paneer or dal'],['🥛','No yogurt?','Dosa or idli batter counts!'],['🥦','No broccoli?','Spinach, beans or cabbage'],['🧀','No paneer?','Tofu or extra lentils'],['🍌','No banana?','Any fruit — apple, orange, pear'],['🥜','No walnuts?','Almonds or cashews are fine']];
+  for (var s = 0; s < swaps.length; s++) {
+    h += '<div style="display:flex; align-items:center; gap:8px; padding:5px 0;"><span>' + swaps[s][0] + '</span><span style="font-size:11px; font-weight:800; color:#1E40AF;">' + swaps[s][1] + '</span><span style="font-size:11px; font-weight:600; color:#3B82F6;">→ ' + swaps[s][2] + '</span></div>';
+  }
+  h += '<div style="font-size:11px; font-weight:700; color:#1D4ED8; margin-top:6px;">💡 Any home-cooked Kerala food is already great for Ammu!</div></div></div>';
+
+  h += '</div>';
+  return h;
+}
+
+function mummaNav(index) {
+  var btns = document.querySelectorAll('#bottom-nav button');
+  if (btns[index]) btns[index].click();
+}
+
+function mummaToggleCook(day, btn) {
+  var idx = MummaState.cookDays.indexOf(day);
+  if (idx >= 0) MummaState.cookDays.splice(idx, 1);
+  else MummaState.cookDays.push(day);
+  mummaSave();
+  var on = MummaState.cookDays.indexOf(day) >= 0;
+  btn.style.background = on ? '#185FA5' : '#fff';
+  btn.style.color = on ? '#fff' : '#9CA3AF';
+  btn.style.borderColor = on ? '#185FA5' : '#E5E7EB';
+}
+
+function mummaToggleSwap() {
+  var list = document.getElementById('m-swap-list');
+  var arrow = document.getElementById('m-swap-arrow');
+  if (!list) return;
+  if (list.style.display === 'none') { list.style.display = 'block'; if (arrow) arrow.textContent = '▴'; }
+  else { list.style.display = 'none'; if (arrow) arrow.textContent = '▾'; }
+}
+
+/* ─── MUMMA GROCERY ──────────────────────────────────────────────────────── */
+
+function buildMummaGrocery() {
+  var h = '<div class="fadein" style="padding:14px; padding-bottom:80px;">';
+
+  // Rotation key
+  h += '<div style="background:#fff; border-radius:14px; border:1px solid #F3F4F6; padding:12px; margin-bottom:12px;">'
+    +    '<div style="font-size:11px; font-weight:800; color:#6B7280; margin-bottom:8px;">Rotation guide (3-week cycle):</div>'
+    +    '<div style="display:flex; flex-wrap:wrap; gap:12px;">';
+  var rotKeys = ['last','two','fresh'];
+  for (var r = 0; r < rotKeys.length; r++) {
+    var rs = ROT_STYLE[rotKeys[r]];
+    h += '<div style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; border-radius:50%; background:' + rs.dot + '; display:inline-block;"></span><span style="font-size:11px; font-weight:600; color:#6B7280;">' + rs.label + '</span></div>';
+  }
+  h += '</div></div>';
+
+  // Custom add
+  h += '<div style="display:flex; gap:8px; margin-bottom:12px;">'
+    +    '<input id="m-custom" type="text" placeholder="Add your own item..." style="flex:1; padding:10px 12px; border-radius:12px; border:1px solid #E5E7EB; font-size:13px; font-weight:600; font-family:inherit; box-sizing:border-box;" />'
+    +    '<button onclick="mummaAddCustom()" style="padding:10px 16px; border-radius:12px; background:#185FA5; color:#fff; font-size:13px; font-weight:800; border:none; cursor:pointer; font-family:inherit;">Add</button>'
+    +  '</div>';
+
+  // Categories
+  var catBorder = { staples:'#E5E7EB', fruits:'#FBCFE8', dry:'#FDE68A', snacks:'#BBF7D0', bone:'#99F6E4', muscle:'#FED7AA', gut:'#FBCFE8', brain:'#DDD6FE', energy:'#FDE68A' };
+
+  for (var c = 0; c < MUMMA_GROCERY.length; c++) {
+    var cat = MUMMA_GROCERY[c];
+    var selCount = 0;
+    for (var ci = 0; ci < cat.items.length; ci++) { if (MummaState.selected[cat.items[ci].id]) selCount++; }
+
+    h += '<div style="background:#fff; border-radius:16px; border:2px solid ' + (catBorder[cat.id] || '#E5E7EB') + '; overflow:hidden; margin-bottom:12px;">'
+      +    '<button onclick="mummaToggleCat(\'' + cat.id + '\')" style="width:100%; display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid #F9FAFB; background:none; border-left:none; border-right:none; border-top:none; cursor:pointer; font-family:inherit; text-align:left;">'
+      +      '<span style="font-size:20px;">' + cat.emoji + '</span>'
+      +      '<div style="flex:1;"><div style="font-size:13px; font-weight:800; color:#1F2937;">' + cat.label + '</div><div style="font-size:11px; font-weight:600; color:#9CA3AF;">' + cat.why + '</div></div>'
+      +      '<span id="cat-count-' + cat.id + '" style="font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; background:#F3F4F6; color:#6B7280;">' + selCount + ' picked</span>'
+      +      '<span id="cat-chev-' + cat.id + '" style="color:#9CA3AF; font-size:13px;">▾</span>'
+      +    '</button>'
+      +    '<div id="cat-items-' + cat.id + '">';
+
+    for (var ii = 0; ii < cat.items.length; ii++) {
+      h += mummaItemRow(cat.items[ii]);
+    }
+    h += '</div></div>';
+  }
+
+  h += '</div>';
+
+  // Sticky summary bar
+  var total = 0;
+  for (var k in MummaState.selected) { if (MummaState.selected[k]) total++; }
+  h += '<div style="position:sticky; bottom:0; left:0; right:0; padding:8px 14px 12px;">'
+    +    '<div style="background:#185FA5; border-radius:16px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 4px 16px rgba(0,0,0,0.2);">'
+    +      '<div><div id="m-summary" style="font-size:15px; font-weight:800; color:#fff;">' + total + ' items selected</div><div style="font-size:10px; font-weight:600; color:#BFDBFE;">Tap items to assign shops</div></div>'
+    +      '<button onclick="mummaShowLists()" style="background:#fff; color:#185FA5; font-size:12px; font-weight:800; padding:8px 16px; border-radius:12px; border:none; cursor:pointer; font-family:inherit;">My lists →</button>'
+    +    '</div>'
+    +  '</div>';
+
+  return h;
+}
+
+function mummaItemRow(item) {
+  var sel = MummaState.selected[item.id];
+  var shop = MummaState.shops[item.id];
+  var rs = ROT_STYLE[item.rot] || ROT_STYLE.none;
+
+  var h = '<div id="gi-' + item.id + '" style="border-bottom:1px solid #F9FAFB; ' + (sel ? 'background:#ECFDF5;' : '') + '">'
+    +    '<div onclick="mummaToggleItem(\'' + item.id + '\')" style="display:flex; align-items:flex-start; gap:12px; padding:11px 16px; cursor:pointer;">'
+    +      '<div class="mcb" style="width:20px; height:20px; border-radius:6px; border:2px solid ' + (sel ? '#0F6E56' : '#E5E7EB') + '; background:' + (sel ? '#0F6E56' : 'transparent') + '; flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-top:1px;">' + (sel ? '<span style="color:#fff; font-size:12px;">✓</span>' : '') + '</div>'
+    +      '<span style="font-size:18px; flex-shrink:0;">' + item.e + '</span>'
+    +      '<div style="flex:1; min-width:0;"><div style="font-size:13px; font-weight:700; color:#1F2937;">' + item.name + '</div><div style="font-size:11px; font-weight:600; color:#9CA3AF;">' + item.qty + '</div></div>'
+    +      '<span style="display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; background:' + rs.bg + '; color:' + rs.color + '; flex-shrink:0;"><span style="width:6px; height:6px; border-radius:50%; background:' + rs.dot + '; display:inline-block;"></span>' + rs.label + '</span>'
+    +    '</div>'
+    +    '<div id="shops-' + item.id + '" style="' + (sel ? '' : 'display:none;') + ' padding:0 16px 11px 48px;">' + (sel ? mummaShopButtons(item.id) : '') + '</div>'
+    +  '</div>';
+  return h;
+}
+
+function mummaShopButtons(itemId) {
+  var current = MummaState.shops[itemId];
+  var out = '<div style="display:flex; flex-wrap:wrap; gap:5px;">';
+  for (var i = 0; i < SHOPS.length; i++) {
+    var shop = SHOPS[i];
+    var on = (current === shop);
+    var st = SHOP_STYLE[shop];
+    out += '<button onclick="event.stopPropagation(); mummaAssignShop(\'' + itemId + '\',\'' + shop + '\')" style="font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; border:1px solid ' + (on ? st.border : '#E5E7EB') + '; background:' + (on ? st.bg : '#fff') + '; color:' + (on ? st.color : '#9CA3AF') + '; cursor:pointer; font-family:inherit;">' + shop + '</button>';
+  }
+  out += '</div>';
+  return out;
+}
+
+function mummaToggleItem(itemId) {
+  MummaState.selected[itemId] = !MummaState.selected[itemId];
+  if (!MummaState.selected[itemId]) delete MummaState.shops[itemId];
+  mummaSave();
+
+  var row = document.getElementById('gi-' + itemId);
+  var cb = row.querySelector('.mcb');
+  var shopsDiv = document.getElementById('shops-' + itemId);
+  if (MummaState.selected[itemId]) {
+    row.style.background = '#ECFDF5';
+    cb.style.background = '#0F6E56'; cb.style.borderColor = '#0F6E56';
+    cb.innerHTML = '<span style="color:#fff; font-size:12px;">✓</span>';
+    shopsDiv.innerHTML = mummaShopButtons(itemId);
+    shopsDiv.style.display = 'block';
+  } else {
+    row.style.background = 'transparent';
+    cb.style.background = 'transparent'; cb.style.borderColor = '#E5E7EB';
+    cb.innerHTML = '';
+    shopsDiv.style.display = 'none';
+    shopsDiv.innerHTML = '';
+  }
+  mummaUpdateCounts(itemId);
+}
+
+function mummaAssignShop(itemId, shop) {
+  MummaState.shops[itemId] = shop;
+  mummaSave();
+  var shopsDiv = document.getElementById('shops-' + itemId);
+  if (shopsDiv) shopsDiv.innerHTML = mummaShopButtons(itemId);
+}
+
+function mummaUpdateCounts(itemId) {
+  // Update category count + summary
+  for (var c = 0; c < MUMMA_GROCERY.length; c++) {
+    var cat = MUMMA_GROCERY[c];
+    var found = false, cnt = 0;
+    for (var i = 0; i < cat.items.length; i++) {
+      if (cat.items[i].id === itemId) found = true;
+      if (MummaState.selected[cat.items[i].id]) cnt++;
+    }
+    if (found) {
+      var el = document.getElementById('cat-count-' + cat.id);
+      if (el) el.textContent = cnt + ' picked';
+    }
+  }
+  var total = 0;
+  for (var k in MummaState.selected) { if (MummaState.selected[k]) total++; }
+  var sum = document.getElementById('m-summary');
+  if (sum) sum.textContent = total + ' items selected';
+}
+
+function mummaToggleCat(catId) {
+  var items = document.getElementById('cat-items-' + catId);
+  var chev = document.getElementById('cat-chev-' + catId);
+  if (!items) return;
+  if (items.style.display === 'none') { items.style.display = 'block'; if (chev) chev.textContent = '▾'; }
+  else { items.style.display = 'none'; if (chev) chev.textContent = '▸'; }
+}
+
+function mummaAddCustom() {
+  var input = document.getElementById('m-custom');
+  if (!input || !input.value.trim()) return;
+  alert('"' + input.value.trim() + '" noted! Custom items will be saved in a future update.');
+  input.value = '';
+}
+
+function mummaShowLists() {
+  var byShop = {};
+  for (var c = 0; c < MUMMA_GROCERY.length; c++) {
+    var items = MUMMA_GROCERY[c].items;
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (MummaState.selected[it.id] && MummaState.shops[it.id]) {
+        var shop = MummaState.shops[it.id];
+        if (!byShop[shop]) byShop[shop] = [];
+        byShop[shop].push(it);
+      }
+    }
+  }
+  if (Object.keys(byShop).length === 0) {
+    alert('No shops assigned yet! Select items and tap a shop name to assign them.');
+    return;
+  }
+  var html = '<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shopping Lists</title></head><body style="font-family:sans-serif; padding:16px; margin:0;">';
+  html += '<div style="font-size:20px; font-weight:900; margin-bottom:16px;">🛒 My Shopping Lists</div>';
+  for (var shopName in byShop) {
+    html += '<div style="margin-bottom:16px;"><div style="font-size:14px; font-weight:800; color:#185FA5; margin-bottom:8px;">' + shopName + ' (' + byShop[shopName].length + ')</div>';
+    for (var j = 0; j < byShop[shopName].length; j++) {
+      var p = byShop[shopName][j];
+      html += '<div style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #eee;"><span style="width:18px; height:18px; border-radius:4px; border:2px solid #ccc; display:inline-block;"></span><span style="font-size:14px;">' + p.e + ' ' + p.name + '</span><span style="font-size:12px; color:#999; margin-left:auto;">' + p.qty + '</span></div>';
+    }
+    html += '</div>';
+  }
+  html += '<div style="font-size:12px; color:#999; margin-top:8px;">Screenshot this to take to the shop 📸</div></body></html>';
+  var w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
+  else alert('Please allow popups to see your store lists.');
+}
+
+
+/* ─── MUMMA MEALS ────────────────────────────────────────────────────────── */
+
+function buildMummaMeals() {
+  var days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var typeLabels = { cook:'Cook day 👩‍🍳', left:'Leftover ♻️', quick:'Quick cook ⚡', easy:'Easy day 😊' };
+  var typeStyle = { cook:['#D1FAE5','#047857','#A7F3D0'], left:['#F3F4F6','#4B5563','#E5E7EB'], quick:['#FFEDD5','#C2410C','#FED7AA'], easy:['#DBEAFE','#1D4ED8','#BFDBFE'] };
+  var today = getDayName();
+
+  var h = '<div class="fadein" style="padding:14px;">';
+  h += '<div style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:14px; padding:12px; margin-bottom:12px; display:flex; align-items:center; gap:8px;"><span style="font-size:16px;">ℹ️</span><span style="font-size:11px; font-weight:700; color:#065F46;">Auto-built around your cook days. Change them on the Home tab.</span></div>';
+
+  for (var d = 0; d < days.length; d++) {
+    var day = days[d];
+    var plan = MUMMA_MEAL_PLAN[day];
+    var isCook = MummaState.cookDays.indexOf(day) >= 0;
+    var type = isCook ? 'cook' : plan.type;
+    var ts = typeStyle[type] || typeStyle.easy;
+
+    h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; overflow:hidden; margin-bottom:12px;">'
+      +    '<div style="display:flex; align-items:center; padding:10px 16px; border-bottom:1px solid #F9FAFB;">'
+      +      '<span style="flex:1; font-size:13px; font-weight:800; color:#1F2937;">' + day + (day === today ? ' — Today' : '') + '</span>'
+      +      '<span style="font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; background:' + ts[0] + '; color:' + ts[1] + '; border:1px solid ' + ts[2] + ';">' + typeLabels[type] + '</span>'
+      +    '</div>';
+    for (var m = 0; m < plan.meals.length; m++) {
+      var meal = plan.meals[m];
+      h += '<div style="display:flex; align-items:flex-start; gap:12px; padding:10px 16px; border-bottom:1px solid #F9FAFB;">'
+        +    '<span style="font-size:11px; font-weight:700; color:#9CA3AF; width:60px; padding-top:1px;">' + meal.t + '</span>'
+        +    '<span style="flex:1; font-size:13px; font-weight:600; color:#374151;">' + meal.m + (meal.egg ? ' <span style="font-size:10px; font-weight:700; padding:1px 6px; border-radius:20px; background:#FFEDD5; color:#C2410C;">🥚 egg</span>' : '') + '</span></div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+/* ─── MUMMA CHECK ────────────────────────────────────────────────────────── */
+
+function buildMummaCheck() {
+  var h = '<div class="fadein" style="padding:14px;">';
+  h += '<div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:14px; padding:12px; margin-bottom:12px; display:flex; align-items:center; gap:8px;"><span style="font-size:18px;">👩</span><span style="font-size:11px; font-weight:700; color:#1E40AF;">Hi Mumma! Just 3 quick ticks — that\'s all! Thank you 🙏</span></div>';
+
+  h += '<div style="background:#fff; border-radius:16px; border:2px solid #BFDBFE; overflow:hidden; margin-bottom:12px;">'
+    +    '<div style="background:#185FA5; padding:10px 16px; display:flex; align-items:center; gap:8px;"><span style="font-size:18px;">✅</span><span style="font-size:16px; font-weight:800; color:#fff;">Mumma\'s daily check</span></div>';
+
+  var items = [
+    ['truth','✅','Ammu told the truth in her checklist','You verified she did what she ticked'],
+    ['meals','🍽️','She had proper meals today','Breakfast, lunch and dinner covered'],
+    ['wellbeing','😊','She seemed happy and well today','Good energy, no tummy issues']
+  ];
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    h += '<div onclick="mummaCheckTick(\'' + it[0] + '\')" style="display:flex; align-items:flex-start; gap:12px; padding:12px 16px; border-bottom:1px solid #F9FAFB; cursor:pointer;">'
+      +    '<div id="mc-' + it[0] + '" class="mc-box" style="width:24px; height:24px; border-radius:8px; border:2px solid #E5E7EB; flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-top:1px;"></div>'
+      +    '<div><div style="font-size:13px; font-weight:700; color:#1F2937;">' + it[1] + ' ' + it[2] + '</div><div style="font-size:11px; font-weight:600; color:#9CA3AF; margin-top:1px;">' + it[3] + '</div></div></div>';
+  }
+  h += '</div>';
+
+  h += '<button id="m-save-check" onclick="mummaSaveCheck()" style="width:100%; padding:16px; border-radius:16px; background:#185FA5; color:#fff; font-size:18px; font-weight:800; border:none; cursor:pointer; font-family:inherit; margin-bottom:12px;">Save today\'s check 🌸</button>';
+
+  h += '<div id="m-check-saved" style="display:none; background:#ECFDF5; border:2px solid #A7F3D0; border-radius:16px; padding:16px; text-align:center;"><div style="font-size:28px; margin-bottom:6px;">✅</div><div style="font-size:16px; font-weight:800; color:#065F46;">Saved! Thank you Mumma 🙏</div><div style="font-size:11px; font-weight:600; color:#059669; margin-top:2px;">Abbu can see this from Palakkad</div></div>';
+
+  h += '</div>';
+  return h;
+}
+
+function mummaCheckTick(id) {
+  var box = document.getElementById('mc-' + id);
+  if (!box) return;
+  var on = box.getAttribute('data-on') === '1';
+  if (!on) {
+    box.setAttribute('data-on','1');
+    box.style.background = '#185FA5'; box.style.borderColor = '#185FA5';
+    box.innerHTML = '<span style="color:#fff; font-size:13px; font-weight:800;">✓</span>';
+  } else {
+    box.setAttribute('data-on','0');
+    box.style.background = 'transparent'; box.style.borderColor = '#E5E7EB';
+    box.innerHTML = '';
+  }
+}
+
+function mummaSaveCheck() {
+  var btn = document.getElementById('m-save-check');
+  var saved = document.getElementById('m-check-saved');
+  if (btn) { btn.disabled = true; btn.style.background = '#9CA3AF'; }
+  if (saved) saved.style.display = 'block';
+  function val(id) { var b = document.getElementById('mc-' + id); return (b && b.getAttribute('data-on') === '1') ? 'yes' : 'no'; }
+  if (typeof submitData === 'function') {
+    submitData({ type:'mumma_check', truth:val('truth'), meals:val('meals'), wellbeing:val('wellbeing') });
+  }
+}
+
+/* ─── MUMMA PROGRESS ─────────────────────────────────────────────────────── */
+
+function buildMummaProgress() {
+  var meas = [['📏','Height','139cm','+0.5cm'],['⚖️','Weight','33.2kg','+0.8kg'],['💪','Bicep','19cm','+1cm'],['✋','Forearm','17cm','+0.5cm'],['🫁','Waist','58cm','no change'],['🏊','Shoulder','34cm','+0.5cm']];
+  var h = '<div class="fadein" style="padding:14px;">';
+  h += '<div style="font-size:10px; font-weight:800; color:#9CA3AF; text-transform:uppercase; letter-spacing:1.5px; text-align:center; padding:6px 0 12px;">📏 Ammu\'s latest measurements</div>';
+  h += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">';
+  for (var i = 0; i < meas.length; i++) {
+    var m = meas[i];
+    var noChange = m[3] === 'no change';
+    h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:12px;"><div style="font-size:20px; margin-bottom:2px;">' + m[0] + '</div><div style="font-size:11px; font-weight:600; color:#9CA3AF;">' + m[1] + '</div><div style="font-size:18px; font-weight:900; color:#185FA5;">' + m[2] + '</div><div style="font-size:10px; font-weight:800; color:' + (noChange ? '#9CA3AF' : '#10B981') + '; margin-top:1px;">' + m[3] + '</div></div>';
+  }
+  h += '</div>';
+  h += '<div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:14px; padding:12px; text-align:center;"><div style="font-size:12px; font-weight:800; color:#1E40AF;">Measurements are entered by Ammu on the last Sunday of each month</div></div>';
+  h += '</div>';
+  return h;
+}
+
+/* ─── MUMMA PAGE DISPATCH ────────────────────────────────────────────────── */
+
+function renderMummaPage(pageId) {
+  if (pageId === 'home')     return buildMummaHome();
+  if (pageId === 'grocery')  return buildMummaGrocery();
+  if (pageId === 'meals')    return buildMummaMeals();
+  if (pageId === 'check')    return buildMummaCheck();
+  if (pageId === 'progress') return buildMummaProgress();
+  return null;
+}
