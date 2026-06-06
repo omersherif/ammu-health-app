@@ -324,14 +324,13 @@ function submitData(data) {
     return;
   }
 
+  // Use text/plain to avoid CORS preflight (Apps Script reads e.postData.contents either way)
   fetch(GOOGLE_SCRIPT_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(data)
   }).then(function(r) {
-    return r.json();
-  }).then(function(res) {
-    console.log('[Data] Saved:', data.type, res);
+    console.log('[Data] Saved:', data.type);
   }).catch(function(err) {
     console.log('[Data] Offline — queuing:', data.type);
     queueSubmission(data);
@@ -359,10 +358,9 @@ function syncPending() {
     }
     fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(queue[i])
-    }).then(function(r) { return r.json(); })
-      .then(function() { done++; tryNext(i + 1); })
+    }).then(function() { done++; tryNext(i + 1); })
       .catch(function() { remaining.push(queue[i]); tryNext(i + 1); });
   }
   tryNext(0);
@@ -2264,7 +2262,7 @@ function adminConfirmDelete() {
   if (btn) { btn.disabled = true; btn.textContent = 'Deleting...'; }
   var sheets = sheet.value === 'all' ? ['daily_tracker','mumma_check','measurements','proud_abbu','notes'] : [sheet.value];
   Promise.all(sheets.map(function(s) {
-    return fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ type:'delete_by_date', sheet:s, from_date:from.value, to_date:to.value }) }).then(function(r){ return r.json(); });
+    return fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({ type:'delete_by_date', sheet:s, from_date:from.value, to_date:to.value }) }).then(function(r){ return r.json(); });
   })).then(function(results) {
     var total = results.reduce(function(sum, r){ return sum + (r.deleted || 0); }, 0);
     var res = document.getElementById('admin-del-result');
