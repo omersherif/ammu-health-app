@@ -284,6 +284,86 @@
 </div>
 
 <!-- Load app logic from separate file -->
+
+<script>
+// Critical login functions — inline to guarantee immediate availability
+// These are duplicated from app.js as a safety net
+
+var PINS_INLINE = { ammu:'2015', mumma:'2468', abbu:'2311', admin:'2006', family:'1234' };
+var _pendingUser = '';
+var _pinBuf = '';
+
+function goPin(userKey) {
+  _pendingUser = userKey;
+  _pinBuf = '';
+  var names = { ammu:'Ammu', mumma:'Mumma', abbu:'Abbu', admin:'Admin', family:'Family' };
+  var avs   = { ammu:'🦁', mumma:'👩', abbu:'🦣', admin:'⚙️', family:'👨‍👩‍👧' };
+  var bgs   = { ammu:'#E1F5EE', mumma:'#E6F1FB', abbu:'#EEEDFE', admin:'#FAEEDA', family:'#F1EFE8' };
+  var av = document.getElementById('pin-avatar');
+  if (av) { av.textContent = avs[userKey]; av.className = 'w-16 h-16 rounded-full flex items-center justify-center text-4xl mb-3'; av.style.background = bgs[userKey]; }
+  var pt = document.getElementById('pin-title');
+  if (pt) pt.textContent = (names[userKey] || userKey) + "'s PIN";
+  var pe = document.getElementById('pin-error');
+  if (pe) pe.style.opacity = '0';
+  _updateDots();
+  _showScreen('screen-pin');
+}
+
+function goLogin() {
+  if (window._clockTimer) { clearInterval(window._clockTimer); window._clockTimer = null; }
+  _pinBuf = '';
+  _updateDots();
+  _showScreen('screen-login');
+}
+
+function pk(digit) {
+  if (_pinBuf.length >= 4) return;
+  _pinBuf += digit;
+  _updateDots();
+  if (_pinBuf.length === 4) setTimeout(_checkPin, 200);
+}
+
+function pdel() {
+  _pinBuf = _pinBuf.slice(0, -1);
+  _updateDots();
+  var pe = document.getElementById('pin-error');
+  if (pe) pe.style.opacity = '0';
+}
+
+function _updateDots() {
+  for (var i = 0; i < 4; i++) {
+    var dot = document.getElementById('pd-' + i);
+    if (!dot) continue;
+    if (i < _pinBuf.length) { dot.classList.add('bg-green-600','border-green-600'); dot.classList.remove('bg-white','border-gray-300'); }
+    else { dot.classList.remove('bg-green-600','border-green-600'); dot.classList.add('bg-white','border-gray-300'); }
+  }
+}
+
+function _checkPin() {
+  if (_pinBuf === PINS_INLINE[_pendingUser]) {
+    // Sync with app.js State if available
+    if (window.App && window.App._checkPin) {
+      window.App.State = window.App.State || {};
+      window.App.State.pendingUser = _pendingUser;
+      window.App.State.pinBuffer = _pinBuf;
+    }
+    if (typeof loadUser === 'function') { loadUser(_pendingUser); }
+    else { _showScreen('screen-main'); }
+  } else {
+    var pe = document.getElementById('pin-error');
+    if (pe) pe.style.opacity = '1';
+    _pinBuf = '';
+    _updateDots();
+  }
+}
+
+function _showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  var el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+</script>
+
 <script src="app.js"></script>
 
 <!-- Register service worker -->

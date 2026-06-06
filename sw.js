@@ -4,7 +4,7 @@
  * Strategy: Cache First for static assets, Network First for data.
  */
 
-const CACHE_NAME = 'ammu-health-v10';
+const CACHE_NAME = 'ammu-health-v11';
 
 // Static assets to cache on install — the app shell
 const STATIC_ASSETS = [
