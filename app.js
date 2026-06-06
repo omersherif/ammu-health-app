@@ -300,9 +300,16 @@ function renderUserPage(userKey, pageId) {
 /* ─── INIT ───────────────────────────────────────────────────────────────── */
 
 window.addEventListener('load', function() {
+  // Load saved PINs from Admin changes
+  var savedPins = JSON.parse(localStorage.getItem('app_pins') || '{}');
+  for (var k in savedPins) { if (PINS[k] !== undefined) PINS[k] = savedPins[k]; }
+  // Load saved Google Script URL
+  var savedUrl = localStorage.getItem('google_script_url');
+  if (savedUrl) GOOGLE_SCRIPT_URL = savedUrl;
+
   buildLoginButtons();
   showScreen('screen-login');
-  console.log('[Ammu App] Module 1 shell loaded');
+  console.log('[Ammu App] All modules loaded');
 });
 
 
@@ -1896,5 +1903,354 @@ function renderAbbuPage(pageId) {
   if (pageId === 'goals')    return buildAbbuGoals();
   if (pageId === 'alerts')   return buildAbbuAlerts();
   if (pageId === 'progress') return buildAbbuProgress();
+  return null;
+}
+
+
+/* ─── SAMPLE DATA (for Family view + test mode) ──────────────────────────── */
+
+var SAMPLE_CATEGORY_SCORES = { exercise:92, bone:85, muscle:74, gut:68, brain:80, peace:55 };
+var SAMPLE_WEEK = [['Mon',85],['Tue',70],['Wed',90],['Thu',45],['Fri',88],['Sat',75],['Sun',60]];
+var SAMPLE_EGGS = 5, SAMPLE_YOGURT = 4, SAMPLE_WATER = 4.2, SAMPLE_EXERCISE = 6;
+var APP_TEST_MODE = localStorage.getItem('test_mode') !== 'false';
+
+/* ─── FAMILY VIEW ────────────────────────────────────────────────────────── */
+
+function buildFamilyView() {
+  var h = '<div class="fadein" style="padding:14px;">';
+
+  if (APP_TEST_MODE) {
+    h += '<div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:12px; padding:9px 12px; margin-bottom:10px; display:flex; align-items:center; gap:8px;"><span style="font-size:14px;">🧪</span><span style="font-size:10px; font-weight:700; color:#92400E;">Sample data — real stats begin once the family starts tracking!</span></div>';
+  }
+
+  h += '<div style="background:#F3F4F6; border-radius:12px; padding:9px 12px; margin-bottom:10px; display:flex; align-items:center; gap:8px;"><span style="font-size:14px;">👀</span><span style="font-size:10px; font-weight:700; color:#5F5E5A;">Read only — see how Ammu is doing!</span></div>';
+
+  // Coins + streak
+  h += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">'
+    +    '<div style="background:#fff; border-radius:14px; border:1px solid #F3F4F6; padding:12px;"><div style="font-size:9px; font-weight:700; color:#9CA3AF; text-transform:uppercase;">Coins earned</div><div style="font-size:24px; font-weight:900; color:#F59E0B;">247</div><div style="font-size:9px; font-weight:600; color:#9CA3AF;">this month</div></div>'
+    +    '<div style="background:#fff; border-radius:14px; border:1px solid #F3F4F6; padding:12px;"><div style="font-size:9px; font-weight:700; color:#9CA3AF; text-transform:uppercase;">Streak</div><div style="font-size:24px; font-weight:900; color:#F97316;">12</div><div style="font-size:9px; font-weight:600; color:#9CA3AF;">days in a row!</div></div>'
+    +  '</div>';
+
+  // Health focus areas
+  var cats = [
+    ['⚡','Exercise',SAMPLE_CATEGORY_SCORES.exercise,'#E1F5EE','#0F6E56','#085041'],
+    ['🦴','Bones',SAMPLE_CATEGORY_SCORES.bone,'#E1F5EE','#0F6E56','#085041'],
+    ['💪','Muscles',SAMPLE_CATEGORY_SCORES.muscle,'#FAEEDA','#E8732A','#633806'],
+    ['🌱','Gut',SAMPLE_CATEGORY_SCORES.gut,'#FBEAF0','#D4537E','#72243E'],
+    ['🧠','Brain',SAMPLE_CATEGORY_SCORES.brain,'#E6F1FB','#185FA5','#0C447C'],
+    ['😊','Peace',SAMPLE_CATEGORY_SCORES.peace,'#E6F1FB','#185FA5','#0C447C']
+  ];
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; overflow:hidden; margin-bottom:12px;">'
+    +    '<div style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid #F9FAFB;"><span style="font-size:18px;">💪</span><span style="font-size:13px; font-weight:800; color:#1F2937;">Health focus areas this week</span></div>'
+    +    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:12px 14px;">';
+  for (var i = 0; i < cats.length; i++) {
+    var c = cats[i];
+    h += '<div style="border-radius:10px; padding:8px 10px; text-align:center; background:' + c[3] + ';"><div style="font-size:20px;">' + c[0] + '</div><div style="font-size:9px; font-weight:800; text-transform:uppercase; color:' + c[5] + ';">' + c[1] + '</div><div style="font-size:18px; font-weight:900; color:' + c[4] + ';">' + c[2] + '%</div><div style="height:4px; border-radius:10px; margin-top:4px; background:rgba(0,0,0,0.08); overflow:hidden;"><div style="height:100%; border-radius:10px; background:' + c[4] + '; width:' + c[2] + '%;"></div></div></div>';
+  }
+  h += '</div></div>';
+
+  // Food highlights
+  var foods = [
+    ['🥚','Egg days',SAMPLE_EGGS + ' of 7 days','Daily goal — muscle building!',SAMPLE_EGGS >= 5],
+    ['🥛','Yogurt days',SAMPLE_YOGURT + ' of 7 days','Calcium for strong bones',SAMPLE_YOGURT >= 5],
+    ['💧','Water average',SAMPLE_WATER + ' glasses/day','Target is 6 glasses',SAMPLE_WATER >= 5],
+    ['🏋️','Exercise days',SAMPLE_EXERCISE + ' of 7 days','Strength + yoga',SAMPLE_EXERCISE >= 5]
+  ];
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; overflow:hidden; margin-bottom:12px;">'
+    +    '<div style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid #F9FAFB;"><span style="font-size:18px;">🍽️</span><span style="flex:1; font-size:13px; font-weight:800; color:#1F2937;">This week\'s food highlights</span></div>';
+  for (var f = 0; f < foods.length; f++) {
+    var fd = foods[f];
+    h += '<div style="display:flex; align-items:center; gap:10px; padding:9px 14px; border-bottom:1px solid #F9FAFB;"><span style="font-size:20px;">' + fd[0] + '</span><div style="flex:1;"><div style="font-size:12px; font-weight:700; color:#1F2937;">' + fd[1] + '</div><div style="font-size:10px; font-weight:600; color:#9CA3AF;">' + fd[3] + '</div></div><div style="text-align:right;"><div style="font-size:12px; font-weight:800; color:' + (fd[4] ? '#0F6E56' : '#E8732A') + ';">' + fd[2] + '</div><div style="font-size:10px;">' + (fd[4] ? '✅' : '⚠️') + '</div></div></div>';
+  }
+  h += '<div style="padding:8px 14px; background:#F8FFFE; text-align:center; font-size:9px; font-weight:700; color:#9CA3AF;">📊 Detailed history coming once data collection starts</div>';
+  h += '</div>';
+
+  // Week chart
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; overflow:hidden; margin-bottom:12px;">'
+    +    '<div style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid #F9FAFB;"><span style="font-size:18px;">📅</span><span style="font-size:13px; font-weight:800; color:#1F2937;">This week at a glance</span></div>'
+    +    '<div style="display:flex; align-items:flex-end; gap:5px; height:70px; padding:12px 14px 6px;">';
+  var today = getDayName();
+  for (var w = 0; w < SAMPLE_WEEK.length; w++) {
+    var pct = SAMPLE_WEEK[w][1];
+    var bh = Math.round(pct * 0.5);
+    var col = pct >= 80 ? '#0F6E56' : pct >= 50 ? '#E8732A' : '#E5E7EB';
+    var isToday = SAMPLE_WEEK[w][0] === today;
+    h += '<div style="flex:1; display:flex; flex-direction:column; align-items:center;"><div style="width:100%; border-radius:3px 3px 0 0; background:' + (isToday ? '#1A1A3E' : col) + '; height:' + bh + 'px;"></div><div style="font-size:8px; font-weight:' + (isToday ? '900' : '600') + '; color:' + (isToday ? '#1A1A3E' : '#9CA3AF') + '; margin-top:3px;">' + SAMPLE_WEEK[w][0] + '</div></div>';
+  }
+  h += '</div></div>';
+
+  // Encouragement
+  h += '<div style="background:#1A1A3E; border-radius:16px; padding:16px; text-align:center;"><div style="font-size:32px; margin-bottom:6px;">🐘</div><div style="font-size:16px; font-weight:800; color:#fff; margin-bottom:4px;">Ammu is doing amazing!</div><div style="font-size:11px; font-weight:600; color:#A5B4FC; line-height:1.6;">12-day streak and counting. Eating well, exercising and getting stronger every week.</div></div>';
+
+  h += '</div>';
+  return h;
+}
+
+/* ─── FAMILY PROGRESS ────────────────────────────────────────────────────── */
+
+function buildFamilyProgress() {
+  var meas = [['📏','Height','139cm','+0.5'],['⚖️','Weight','33.2kg','+0.8'],['💪','Bicep','19cm','+1'],['✋','Forearm','17cm','+0.5'],['🫁','Waist','58cm','0'],['🏊','Shoulder','34cm','+0.5']];
+  var h = '<div class="fadein" style="padding:14px;">';
+  h += '<div style="background:#F3F4F6; border-radius:12px; padding:9px 12px; margin-bottom:12px; display:flex; align-items:center; gap:8px;"><span style="font-size:14px;">👀</span><span style="font-size:10px; font-weight:700; color:#5F5E5A;">Read only — Ammu\'s growth</span></div>';
+  h += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">';
+  for (var i = 0; i < meas.length; i++) {
+    var m = meas[i];
+    h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:12px;"><div style="font-size:20px;">' + m[0] + '</div><div style="font-size:11px; font-weight:600; color:#9CA3AF;">' + m[1] + '</div><div style="font-size:18px; font-weight:900; color:#5F5E5A;">' + m[2] + '</div><div style="font-size:10px; font-weight:800; color:' + (m[3] === '0' ? '#9CA3AF' : '#10B981') + ';">' + (m[3] === '0' ? 'no change' : '+' + m[3] + ' this month') + '</div></div>';
+  }
+  h += '</div>';
+
+  // Push-up
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:16px;"><div style="font-size:13px; font-weight:800; color:#1F2937; margin-bottom:12px;">💪 Push-up progress</div><div style="display:flex; align-items:flex-end; gap:10px; height:70px;">';
+  var pu = [['Mar',3],['Apr',5],['May',8]];
+  for (var p = 0; p < pu.length; p++) {
+    h += '<div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;"><div style="font-size:13px; font-weight:900; color:#5F5E5A;">' + pu[p][1] + '</div><div style="width:100%; background:#5F5E5A; border-radius:4px 4px 0 0; height:' + (pu[p][1]*8) + 'px;"></div><div style="font-size:10px; font-weight:700; color:#9CA3AF; margin-top:4px;">' + pu[p][0] + '</div></div>';
+  }
+  h += '</div><div style="text-align:center; font-size:12px; font-weight:800; color:#10B981; margin-top:10px;">📈 Stronger every month!</div></div>';
+
+  h += '</div>';
+  return h;
+}
+
+/* ─── FAMILY PAGE DISPATCH ───────────────────────────────────────────────── */
+
+function renderFamilyPage(pageId) {
+  if (pageId === 'view')     return buildFamilyView();
+  if (pageId === 'progress') return buildFamilyProgress();
+  return null;
+}
+
+
+/* ============================================================================
+   MODULE 5: ADMIN + FAMILY SECTIONS
+   Admin: Users, Settings, Data, Access
+   Family: View, Progress (read-only, for grandma/aunt/sister)
+   ============================================================================ */
+
+/* ─── ADMIN USERS ────────────────────────────────────────────────────────── */
+
+function buildAdminUsers() {
+  var list = [
+    { key:'ammu',   emoji:'🦁', name:'Ammu',   role:'Daily tracker & rewards' },
+    { key:'mumma',  emoji:'👩', name:'Mumma',  role:'Grocery, meals & check' },
+    { key:'abbu',   emoji:'🦣', name:'Abbu',   role:'Dashboard & monitoring' },
+    { key:'admin',  emoji:'⚙️', name:'Admin',  role:'Full access & settings' },
+    { key:'family', emoji:'👨‍👩‍👧', name:'Family', role:'Read-only family view' }
+  ];
+
+  var h = '<div class="fadein" style="padding:14px;">';
+  h += '<div style="font-size:10px; font-weight:800; color:#9CA3AF; text-transform:uppercase; letter-spacing:1.5px; padding:6px 0;">👥 Manage user PINs</div>';
+
+  for (var i = 0; i < list.length; i++) {
+    var u = list[i];
+    h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:14px; margin-bottom:10px;">'
+      +    '<div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">'
+      +      '<div style="width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; background:#F9FAFB;">' + u.emoji + '</div>'
+      +      '<div style="flex:1;"><div style="font-size:14px; font-weight:800; color:#1F2937;">' + u.name + '</div><div style="font-size:11px; font-weight:600; color:#9CA3AF;">' + u.role + '</div></div>'
+      +    '</div>'
+      +    '<div style="display:flex; gap:8px;">'
+      +      '<input id="pin-input-' + u.key + '" type="text" maxlength="4" value="' + PINS[u.key] + '" style="flex:1; padding:9px 12px; border-radius:10px; border:1px solid #E5E7EB; font-size:14px; font-weight:800; letter-spacing:3px; text-align:center; font-family:inherit; box-sizing:border-box;" />'
+      +      '<button onclick="adminUpdatePin(\'' + u.key + '\')" style="padding:9px 16px; border-radius:10px; background:#854F0B; color:#fff; font-size:12px; font-weight:800; border:none; cursor:pointer; font-family:inherit;">Update</button>'
+      +    '</div>'
+      +  '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function adminUpdatePin(userKey) {
+  var input = document.getElementById('pin-input-' + userKey);
+  if (!input) return;
+  var newPin = input.value.trim();
+  if (!/^[0-9]{4}$/.test(newPin)) { alert('PIN must be exactly 4 digits!'); return; }
+  PINS[userKey] = newPin;
+  // Persist PIN changes
+  var savedPins = JSON.parse(localStorage.getItem('app_pins') || '{}');
+  savedPins[userKey] = newPin;
+  localStorage.setItem('app_pins', JSON.stringify(savedPins));
+  alert(USERS[userKey].name + "'s PIN updated to " + newPin);
+}
+
+/* ─── ADMIN SETTINGS ─────────────────────────────────────────────────────── */
+
+function buildAdminSettings() {
+  var testMode = localStorage.getItem('test_mode') !== 'false';
+  var scriptSet = (GOOGLE_SCRIPT_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE');
+
+  var h = '<div class="fadein" style="padding:14px;">';
+
+  // Test mode
+  h += '<div style="font-size:10px; font-weight:800; color:#9CA3AF; text-transform:uppercase; letter-spacing:1.5px; padding:6px 0;">🧪 Test mode</div>';
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:16px; margin-bottom:12px;">'
+    +    '<div style="font-size:13px; font-weight:800; color:#1F2937;">Test mode is ' + (testMode ? 'ON 🟡' : 'OFF 🟢') + '</div>'
+    +    '<div style="font-size:11px; font-weight:600; color:#9CA3AF; margin:4px 0 10px;">' + (testMode ? 'Sample data is showing. Family sees a test banner.' : 'Live mode — only real tracked data shows.') + '</div>'
+    +    '<button onclick="adminToggleTestMode()" style="width:100%; padding:11px; border-radius:12px; background:' + (testMode ? '#0F6E56' : '#E8732A') + '; color:#fff; font-size:14px; font-weight:800; border:none; cursor:pointer; font-family:inherit;">' + (testMode ? 'Switch to LIVE mode ✅' : 'Switch to TEST mode 🧪') + '</button>'
+    +  '</div>';
+
+  // Google Sheets URL
+  h += '<div style="font-size:10px; font-weight:800; color:#9CA3AF; text-transform:uppercase; letter-spacing:1.5px; padding:6px 0;">🔗 Google Sheets</div>';
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:16px; margin-bottom:12px;">'
+    +    '<div style="font-size:12px; font-weight:700; color:#1F2937; margin-bottom:4px;">Apps Script URL ' + (scriptSet ? '✅' : '⚠️ not set') + '</div>'
+    +    '<input id="admin-script-url" type="text" value="' + (scriptSet ? GOOGLE_SCRIPT_URL : '') + '" placeholder="https://script.google.com/macros/s/..." style="width:100%; padding:9px 12px; border-radius:10px; border:1px solid #E5E7EB; font-size:11px; font-weight:600; font-family:inherit; box-sizing:border-box; margin-bottom:8px;" />'
+    +    '<button onclick="adminSaveScriptUrl()" style="width:100%; padding:10px; border-radius:10px; background:#854F0B; color:#fff; font-size:14px; font-weight:800; border:none; cursor:pointer; font-family:inherit;">Save &amp; Connect</button>'
+    +    '<div id="admin-url-saved" style="display:none; margin-top:8px; text-align:center; font-size:12px; font-weight:800; color:#0F6E56;">✅ Saved!</div>'
+    +  '</div>';
+
+  // Delete by date range
+  h += '<div style="font-size:10px; font-weight:800; color:#9CA3AF; text-transform:uppercase; letter-spacing:1.5px; padding:6px 0;">🗑️ Delete data by date</div>';
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:16px; margin-bottom:12px;">'
+    +    '<div style="font-size:11px; font-weight:600; color:#9CA3AF; margin-bottom:10px;">Only rows in this range get deleted. Google Sheets keeps version history so you can always restore.</div>'
+    +    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">'
+    +      '<div><label style="font-size:10px; font-weight:800; color:#854F0B;">From</label><input type="date" id="admin-del-from" style="width:100%; padding:8px; border-radius:8px; border:1px solid #E5E7EB; font-size:12px; font-family:inherit; box-sizing:border-box;" /></div>'
+    +      '<div><label style="font-size:10px; font-weight:800; color:#854F0B;">To</label><input type="date" id="admin-del-to" style="width:100%; padding:8px; border-radius:8px; border:1px solid #E5E7EB; font-size:12px; font-family:inherit; box-sizing:border-box;" /></div>'
+    +    '</div>'
+    +    '<select id="admin-del-sheet" style="width:100%; padding:8px; border-radius:8px; border:1px solid #E5E7EB; font-size:12px; font-weight:600; font-family:inherit; margin-bottom:8px;">'
+    +      '<option value="all">All sheets</option><option value="daily_tracker">Ammu tracker</option><option value="mumma_check">Mumma check</option><option value="measurements">Measurements</option><option value="proud_abbu">Proud Abbu</option><option value="notes">Notes</option>'
+    +    '</select>'
+    +    '<div id="admin-del-preview" style="display:none; background:#FEF2F2; border:1px solid #FCA5A5; border-radius:8px; padding:10px; margin-bottom:8px; font-size:11px; font-weight:800; color:#991B1B;"></div>'
+    +    '<button onclick="adminPreviewDelete()" style="width:100%; padding:10px; border-radius:10px; background:#854F0B; color:#fff; font-size:14px; font-weight:800; border:none; cursor:pointer; font-family:inherit; margin-bottom:6px;">Preview what will be deleted</button>'
+    +    '<button onclick="adminConfirmDelete()" id="admin-del-confirm" style="display:none; width:100%; padding:10px; border-radius:10px; background:#DC2626; color:#fff; font-size:14px; font-weight:800; border:none; cursor:pointer; font-family:inherit;">Confirm delete</button>'
+    +    '<div id="admin-del-result" style="display:none; margin-top:8px; text-align:center; font-size:12px; font-weight:800; color:#0F6E56;"></div>'
+    +  '</div>';
+
+  // Reset local
+  h += '<div style="background:#FEF2F2; border-radius:16px; border:1px solid #FCA5A5; padding:16px;">'
+    +    '<div style="font-size:12px; font-weight:800; color:#991B1B; margin-bottom:4px;">⚠️ Reset local data</div>'
+    +    '<div style="font-size:11px; font-weight:600; color:#B91C1C; margin-bottom:8px;">Clears coins, grocery and cook days from THIS device only. Cannot be undone.</div>'
+    +    '<button onclick="adminResetLocal()" style="width:100%; padding:10px; border-radius:10px; background:#DC2626; color:#fff; font-size:14px; font-weight:800; border:none; cursor:pointer; font-family:inherit;">Reset local data</button>'
+    +  '</div>';
+
+  h += '</div>';
+  return h;
+}
+
+function adminToggleTestMode() {
+  var current = localStorage.getItem('test_mode') !== 'false';
+  localStorage.setItem('test_mode', current ? 'false' : 'true');
+  APP_TEST_MODE = !current;
+  var page = document.getElementById('page-admin-settings');
+  if (page) page.innerHTML = buildAdminSettings();
+  alert(!current ? '🧪 Test mode ON' : '✅ Live mode ON — only real data shows now');
+}
+
+function adminSaveScriptUrl() {
+  var input = document.getElementById('admin-script-url');
+  if (!input || !input.value.trim()) { alert('Please paste your Apps Script URL'); return; }
+  GOOGLE_SCRIPT_URL = input.value.trim();
+  localStorage.setItem('google_script_url', GOOGLE_SCRIPT_URL);
+  var saved = document.getElementById('admin-url-saved');
+  if (saved) saved.style.display = 'block';
+}
+
+function adminPreviewDelete() {
+  var from = document.getElementById('admin-del-from');
+  var to = document.getElementById('admin-del-to');
+  var sheet = document.getElementById('admin-del-sheet');
+  if (!from.value || !to.value) { alert('Please select both dates!'); return; }
+  if (from.value > to.value) { alert('From date must be before To date!'); return; }
+  var labels = { all:'all sheets', daily_tracker:'Ammu tracker', mumma_check:'Mumma check', measurements:'Measurements', proud_abbu:'Proud Abbu', notes:'Notes' };
+  var preview = document.getElementById('admin-del-preview');
+  var confirm = document.getElementById('admin-del-confirm');
+  if (preview && confirm) {
+    preview.innerHTML = 'Will delete all rows from <strong>' + (labels[sheet.value] || sheet.value) + '</strong> between <strong>' + from.value + '</strong> and <strong>' + to.value + '</strong>. Cannot be undone.';
+    preview.style.display = 'block';
+    confirm.style.display = 'block';
+  }
+}
+
+function adminConfirmDelete() {
+  var from = document.getElementById('admin-del-from');
+  var to = document.getElementById('admin-del-to');
+  var sheet = document.getElementById('admin-del-sheet');
+  if (!from.value || !to.value) return;
+  if (GOOGLE_SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') { alert('Set your Google Script URL first!'); return; }
+  var btn = document.getElementById('admin-del-confirm');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting...'; }
+  var sheets = sheet.value === 'all' ? ['daily_tracker','mumma_check','measurements','proud_abbu','notes'] : [sheet.value];
+  Promise.all(sheets.map(function(s) {
+    return fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ type:'delete_by_date', sheet:s, from_date:from.value, to_date:to.value }) }).then(function(r){ return r.json(); });
+  })).then(function(results) {
+    var total = results.reduce(function(sum, r){ return sum + (r.deleted || 0); }, 0);
+    var res = document.getElementById('admin-del-result');
+    if (res) { res.style.display = 'block'; res.textContent = '✅ Deleted ' + total + ' row(s)'; }
+    if (btn) btn.style.display = 'none';
+    var prev = document.getElementById('admin-del-preview');
+    if (prev) prev.style.display = 'none';
+  }).catch(function() {
+    alert('Error deleting. Check your Script URL.');
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirm delete'; }
+  });
+}
+
+function adminResetLocal() {
+  if (!confirm('Reset all local data on this device? This cannot be undone.')) return;
+  var keys = ['ammu_coins','ammu_streak','ammu_week','mumma_cook_days','mumma_selected','mumma_shops','abbu_goals','abbu_rewards'];
+  for (var i = 0; i < keys.length; i++) localStorage.removeItem(keys[i]);
+  alert('Local data reset. Reloading...');
+  location.reload();
+}
+
+/* ─── ADMIN DATA ─────────────────────────────────────────────────────────── */
+
+function buildAdminData() {
+  var h = '<div class="fadein" style="padding:14px;">';
+  h += '<div style="font-size:10px; font-weight:800; color:#9CA3AF; text-transform:uppercase; letter-spacing:1.5px; padding:6px 0;">🗄️ Data overview</div>';
+
+  var coins = localStorage.getItem('ammu_coins') || '0';
+  var streak = localStorage.getItem('ammu_streak') || '0';
+  var selected = JSON.parse(localStorage.getItem('mumma_selected') || '{}');
+  var selCount = 0; for (var k in selected) { if (selected[k]) selCount++; }
+
+  var stats = [
+    ['🪙','Ammu coins', coins],
+    ['🔥','Current streak', streak + ' days'],
+    ['🛒','Grocery items selected', selCount],
+    ['📅','Cook days set', JSON.parse(localStorage.getItem('mumma_cook_days') || '[]').length]
+  ];
+  h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; overflow:hidden; margin-bottom:12px;">';
+  for (var i = 0; i < stats.length; i++) {
+    h += '<div style="display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid #F9FAFB;"><span style="font-size:18px;">' + stats[i][0] + '</span><span style="flex:1; font-size:13px; font-weight:600; color:#374151;">' + stats[i][1] + '</span><span style="font-size:15px; font-weight:900; color:#854F0B;">' + stats[i][2] + '</span></div>';
+  }
+  h += '</div>';
+
+  h += '<div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:14px; padding:12px; font-size:11px; font-weight:700; color:#92400E;">💡 This shows data stored on THIS device. Full history lives in Google Sheets once connected.</div>';
+
+  h += '</div>';
+  return h;
+}
+
+/* ─── ADMIN ACCESS ───────────────────────────────────────────────────────── */
+
+function buildAdminAccess() {
+  var perms = [
+    { who:'🦁 Ammu',   can:['Her own tracker','Rewards & secrets','Her measurements'], cant:['Other users','Settings','Mumma\u2019s grocery'] },
+    { who:'👩 Mumma',  can:['Grocery & meals','Daily check','View measurements'], cant:['Settings','Goals editor','Reward approvals'] },
+    { who:'🦣 Abbu',   can:['All monitoring','Approve rewards','Goals & stories'], cant:['Settings','Change PINs'] },
+    { who:'👨‍👩‍👧 Family', can:['View Ammu\u2019s progress','See health scores'], cant:['Edit anything','See settings'] }
+  ];
+  var h = '<div class="fadein" style="padding:14px;">';
+  h += '<div style="font-size:10px; font-weight:800; color:#9CA3AF; text-transform:uppercase; letter-spacing:1.5px; padding:6px 0;">🔐 Who can see what</div>';
+  for (var i = 0; i < perms.length; i++) {
+    var p = perms[i];
+    h += '<div style="background:#fff; border-radius:16px; border:1px solid #F3F4F6; padding:14px; margin-bottom:10px;">'
+      +    '<div style="font-size:14px; font-weight:800; color:#1F2937; margin-bottom:8px;">' + p.who + '</div>';
+    for (var c = 0; c < p.can.length; c++) {
+      h += '<div style="display:flex; align-items:center; gap:8px; padding:2px 0;"><span style="color:#10B981;">✓</span><span style="font-size:12px; font-weight:600; color:#374151;">' + p.can[c] + '</span></div>';
+    }
+    for (var x = 0; x < p.cant.length; x++) {
+      h += '<div style="display:flex; align-items:center; gap:8px; padding:2px 0;"><span style="color:#EF4444;">✗</span><span style="font-size:12px; font-weight:600; color:#9CA3AF;">' + p.cant[x] + '</span></div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+/* ─── ADMIN PAGE DISPATCH ────────────────────────────────────────────────── */
+
+function renderAdminPage(pageId) {
+  if (pageId === 'users')    return buildAdminUsers();
+  if (pageId === 'settings') return buildAdminSettings();
+  if (pageId === 'data')     return buildAdminData();
+  if (pageId === 'access')   return buildAdminAccess();
   return null;
 }
